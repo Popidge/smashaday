@@ -1,11 +1,24 @@
 import { internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 
 export const generateDailyChallenge = internalMutation({
   args: {},
-  returns: v.id("daily_challenges"),
+  returns: v.union(v.id("daily_challenges"), v.null()),
   handler: async (ctx) => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Step 0: Check if challenge already exists for today
+    const existingChallenge = await ctx.db
+      .query("daily_challenges")
+      .withIndex("by_date", (q) => q.eq("date", today))
+      .unique();
+
+    if (existingChallenge) {
+      return null; // Already exists, don't generate new one
+    }
+
     // Step 1: Look up the last 5 days' daily challenges to see which smashes have been used recently
     const recentChallenges = await ctx.db
       .query("daily_challenges")
@@ -73,12 +86,32 @@ export const generateDailyChallenge = internalMutation({
     }
 
     // Step 5: Write to db
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const challengeId = await ctx.db.insert("daily_challenges", {
       date: today,
       dailySmashes,
     });
 
     return challengeId;
+  },
+});
+
+export const regenerateDailyChallenge = internalMutation({
+  args: {},
+  returns: v.union(v.id("daily_challenges"), v.null()),
+  handler: async (ctx): Promise<Id<"daily_challenges"> | null> => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Check if challenge exists for today and delete it
+    const existingChallenge = await ctx.db
+      .query("daily_challenges")
+      .withIndex("by_date", (q) => q.eq("date", today))
+      .unique();
+
+    if (existingChallenge) {
+      await ctx.db.delete(existingChallenge._id);
+    }
+
+    // Now generate a new one
+    return await ctx.runMutation(internal.daily_challenge.generateDailyChallenge, {});
   },
 });
