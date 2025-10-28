@@ -128,9 +128,9 @@ export default function Game() {
           </h2>
           <div className="text-center mb-4">
             <p>
-              <span className="badge badge-primary badge-soft">&nbsp;{titleCase(currentSmash.category1)}&nbsp;</span>
+              <span className="badge badge-primary badge-sm badge-soft">&nbsp;{titleCase(currentSmash.category1)}&nbsp;</span>
               <span className="mx-2">+</span>
-              <span className="badge badge-secondary badge-soft">&nbsp;{titleCase(currentSmash.category2)}&nbsp;</span>
+              <span className="badge badge-secondary badge-sm badge-soft">&nbsp;{titleCase(currentSmash.category2)}&nbsp;</span>
             </p>
             <p className="text-lg text-base-content/70 mt-2">
               {currentSmash.clue1} 
@@ -175,9 +175,11 @@ export default function Game() {
             </div>
           )}
 
-          <div className="text-center text-sm text-base-content/50 mt-4">
-            Score: {score.filter(Boolean).length}/{score.length}
-          </div>
+          {currentIndex > 0 && (
+            <div className="text-center text-sm text-base-content/50 mt-4">
+              Score: {score.filter(Boolean).length}
+            </div>
+          )}
         </div>
       </div>
     </div>
