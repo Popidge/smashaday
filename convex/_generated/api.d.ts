@@ -10,6 +10,7 @@
 
 import type * as crons from "../crons.js";
 import type * as daily_challenge from "../daily_challenge.js";
+import type * as queries from "../queries.js";
 import type * as seed from "../seed.js";
 
 import type {
@@ -29,6 +30,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   daily_challenge: typeof daily_challenge;
+  queries: typeof queries;
   seed: typeof seed;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
