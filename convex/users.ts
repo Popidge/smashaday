@@ -12,17 +12,18 @@ export const current = query({
 export const upsertFromClerk = internalMutation({
   args: { data: v.any() as Validator<UserJSON> }, // no runtime validation, trust Clerk
   async handler(ctx, { data }) {
-    const userAttributes = {
+    const userAttrs = {
       name: `${data.first_name} ${data.last_name}`,
       externalId: data.id,
-      challengeScores: {}
     };
 
     const user = await userByExternalId(ctx, data.id);
     if (user === null) {
-      await ctx.db.insert("users", userAttributes);
+      // New user: create with empty challengeScores record
+      await ctx.db.insert("users", { ...userAttrs, challengeScores: {} });
     } else {
-      await ctx.db.patch(user._id, userAttributes);
+      // Existing user: only patch non-score fields so we don't overwrite saved scores
+      await ctx.db.patch(user._id, userAttrs);
     }
   },
 });
