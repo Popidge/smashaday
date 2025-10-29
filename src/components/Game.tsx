@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { validateAnswer, titleCase, highlightPortmanteau } from "../lib/utils";
@@ -75,7 +75,7 @@ export default function Game() {
     alert("Copied to clipboard!");
   };
 
-  const saveScore = async () => {
+  const saveScore = useCallback(async () => {
     if (!isSignedIn || !clerkUserId || !challenge) return;
 
     try {
@@ -96,13 +96,15 @@ export default function Game() {
       console.error("Error saving score:", error);
       setSaveMessage("Failed to save score.");
     }
-  };
+  }, [isSignedIn, clerkUserId, challenge, score, saveDailyScores]);
 
   useEffect(() => {
-    if (gameState === "finished" && isSignedIn && challenge) {
-      saveScore();
+    if (gameState === "finished") {
+      void (async () => {
+        await saveScore();
+      })();
     }
-  }, [gameState, isSignedIn, challenge]);
+  }, [gameState, saveScore]);
 
   if (gameState === "loading") {
     return (
@@ -146,7 +148,7 @@ export default function Game() {
         {saveMessage && (
           <p className="text-sm mb-4 text-center">{saveMessage}</p>
         )}
-        <button onClick={copyShareSummary} className="btn btn-primary mb-4">
+        <button onClick={() => void copyShareSummary()} className="btn btn-primary mb-4">
           Copy Share Summary
         </button>
         <button onClick={handleRestart} className="btn btn-outline">
@@ -191,7 +193,11 @@ export default function Game() {
                 className="input input-bordered w-full"
                 value={userAnswer}
                 onChange={(e) => setUserAnswer(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleSubmit();
+                  }
+                }}
               />
               <button onClick={handleSubmit} className="btn btn-primary w-full">
                 Submit
