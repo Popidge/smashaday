@@ -16,4 +16,14 @@ export default defineSchema({
     date: v.string(),
     dailySmashes: v.array(v.id("smashes")),
   }).index("by_date", ["date"]),
+
+  users: defineTable({
+    name: v.string(),
+    // this the Clerk ID, stored in the subject JWT field
+    externalId: v.string(),
+    challengeScores: v.array(v.object({
+      challengeId: v.id("daily_challenges"),
+      score: v.number(),
+    })),
+}).index("byExternalId", ["externalId"]),
 })

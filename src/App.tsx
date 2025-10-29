@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import Header from "./components/Header";
 import Game from "./components/Game";
+import Footer from "./components/Footer";
 
 export default function App() {
   const [showGame, setShowGame] = useState(false);
@@ -30,6 +31,7 @@ export default function App() {
           Smash it up!
         </button>
       </main>
+      <Footer />
     </>
   );
 }
