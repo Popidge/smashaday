@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { validateAnswer, titleCase, highlightPortmanteau } from "../lib/utils";
 import { cn } from "../lib/utils";
+import { useAuth } from "@clerk/clerk-react";
 
 type GameState = "loading" | "playing" | "feedback" | "finished";
 
@@ -15,10 +16,15 @@ export default function Game() {
   const [score, setScore] = useState<boolean[]>([]);
   const [userAnswer, setUserAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { isSignedIn, userId: clerkUserId } = useAuth();
 
   const challenge = useQuery(api.queries.getDailyChallengeByDate, { date: today });
   const challengeNumber = useQuery(api.queries.getChallengeNumber, { date: today });
+
+  const saveDailyScores = useMutation(api.saveDailyScores.saveDailyScores);
 
   const currentSmashId = challenge?.dailySmashes[currentIndex];
   const currentSmash = useQuery(api.queries.getSmashById, currentSmashId ? { id: currentSmashId } : "skip");
@@ -56,6 +62,7 @@ export default function Game() {
     setCurrentIndex(0);
     setScore([]);
     setUserAnswer("");
+    setSaveMessage("");
     setGameState("playing");
     inputRef.current?.focus();
   };
@@ -67,6 +74,35 @@ export default function Game() {
     await navigator.clipboard.writeText(summary);
     alert("Copied to clipboard!");
   };
+
+  const saveScore = async () => {
+    if (!isSignedIn || !clerkUserId || !challenge) return;
+
+    try {
+      const result = await saveDailyScores({
+        externalId: clerkUserId,
+        challengeId: challenge._id,
+        score: score.filter(Boolean).length,
+      });
+
+      if (result.status === "saved") {
+        setSaveMessage("Score saved!");
+      } else if (result.status === "already_saved") {
+        setSaveMessage("Score already saved for today.");
+      } else {
+        setSaveMessage("Failed to save score.");
+      }
+    } catch (error) {
+      console.error("Error saving score:", error);
+      setSaveMessage("Failed to save score.");
+    }
+  };
+
+  useEffect(() => {
+    if (gameState === "finished" && isSignedIn && challenge) {
+      saveScore();
+    }
+  }, [gameState, isSignedIn, challenge]);
 
   if (gameState === "loading") {
     return (
@@ -107,6 +143,9 @@ export default function Game() {
             </div>
           ))}
         </div>
+        {saveMessage && (
+          <p className="text-sm mb-4 text-center">{saveMessage}</p>
+        )}
         <button onClick={copyShareSummary} className="btn btn-primary mb-4">
           Copy Share Summary
         </button>

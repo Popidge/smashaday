@@ -29,3 +29,10 @@ export const getChallengeNumber = query({
     return index + 1; // 1-based numbering
   },
 });
+
+export const getAllUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").collect();
+  },
+});

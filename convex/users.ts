@@ -15,7 +15,7 @@ export const upsertFromClerk = internalMutation({
     const userAttributes = {
       name: `${data.first_name} ${data.last_name}`,
       externalId: data.id,
-      challengeScores: []
+      challengeScores: {}
     };
 
     const user = await userByExternalId(ctx, data.id);
@@ -39,6 +39,16 @@ export const deleteFromClerk = internalMutation({
         `Can't delete user, there is none for Clerk user ID: ${clerkUserId}`,
       );
     }
+  },
+});
+
+export const updateChallengeScores = internalMutation({
+  args: {
+    userId: v.id("users"),
+    challengeScores: v.record(v.id("daily_challenges"), v.number()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, { challengeScores: args.challengeScores });
   },
 });
 

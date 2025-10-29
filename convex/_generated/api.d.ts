@@ -11,7 +11,9 @@
 import type * as crons from "../crons.js";
 import type * as daily_challenge from "../daily_challenge.js";
 import type * as http from "../http.js";
+import type * as migrateUserScores from "../migrateUserScores.js";
 import type * as queries from "../queries.js";
+import type * as saveDailyScores from "../saveDailyScores.js";
 import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
@@ -33,7 +35,9 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   daily_challenge: typeof daily_challenge;
   http: typeof http;
+  migrateUserScores: typeof migrateUserScores;
   queries: typeof queries;
+  saveDailyScores: typeof saveDailyScores;
   seed: typeof seed;
   users: typeof users;
 }>;

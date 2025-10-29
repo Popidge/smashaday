@@ -21,9 +21,6 @@ export default defineSchema({
     name: v.string(),
     // this the Clerk ID, stored in the subject JWT field
     externalId: v.string(),
-    challengeScores: v.array(v.object({
-      challengeId: v.id("daily_challenges"),
-      score: v.number(),
-    })),
+    challengeScores: v.record(v.id("daily_challenges"), v.number()),
 }).index("byExternalId", ["externalId"]),
 })
