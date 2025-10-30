@@ -9,6 +9,7 @@
  */
 
 import type * as addCategories from "../addCategories.js";
+import type * as clueGen from "../clueGen.js";
 import type * as crons from "../crons.js";
 import type * as daily_challenge from "../daily_challenge.js";
 import type * as generateWords from "../generateWords.js";
@@ -39,6 +40,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   addCategories: typeof addCategories;
+  clueGen: typeof clueGen;
   crons: typeof crons;
   daily_challenge: typeof daily_challenge;
   generateWords: typeof generateWords;

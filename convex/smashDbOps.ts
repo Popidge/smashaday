@@ -82,3 +82,97 @@ export const writePendingSmashes = internalMutation({
     return null;
   },
 });
+
+/**
+ * Returns all rows from pendingSmashes with status="pending".
+ * Return fields: word1, word2
+ */
+export const getPendingSmashes = internalQuery({
+  args: {},
+  returns: v.array(
+    v.object({
+      word1: v.string(),
+      word2: v.string(),
+    }),
+  ),
+  handler: async (ctx) => {
+    const pendingSmashes = await ctx.db
+      .query("pendingSmashes")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .collect();
+    return pendingSmashes.map((smash) => ({
+      word1: smash.word1,
+      word2: smash.word2,
+    }));
+  },
+});
+
+/**
+ * Takes word string, queries wordsDB using by_word index.
+ * Returns: word, category, clue, clueStatus. Return null if not found.
+ */
+export const getWordByWord = internalQuery({
+  args: {
+    word: v.string(),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      word: v.string(),
+      category: v.string(),
+      clue: v.string(),
+      clueStatus: v.union(
+        v.literal("pending"),
+        v.literal("enriched"),
+        v.literal("fallback"),
+        v.literal("failed"),
+      ),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const wordDoc = await ctx.db
+      .query("wordsDb")
+      .withIndex("by_word", (q) => q.eq("word", args.word))
+      .unique();
+    if (!wordDoc) {
+      return null;
+    }
+    return {
+      word: wordDoc.word,
+      category: wordDoc.category,
+      clue: wordDoc.clue,
+      clueStatus: wordDoc.clueStatus,
+    };
+  },
+});
+
+/**
+ * Takes word string, clue string, clueStatus enum ("enriched" | "fallback" | "failed").
+ * Updates corresponding row in wordsDB.
+ */
+export const updateWordClue = internalMutation({
+  args: {
+    word: v.string(),
+    clue: v.string(),
+    clueStatus: v.union(
+      v.literal("enriched"),
+      v.literal("fallback"),
+      v.literal("failed"),
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const wordDoc = await ctx.db
+      .query("wordsDb")
+      .withIndex("by_word", (q) => q.eq("word", args.word))
+      .unique();
+    if (!wordDoc) {
+      throw new Error(`Word "${args.word}" not found in wordsDB`);
+    }
+    await ctx.db.patch(wordDoc._id, {
+      clue: args.clue,
+      clueStatus: args.clueStatus,
+    });
+    return null;
+  },
+});

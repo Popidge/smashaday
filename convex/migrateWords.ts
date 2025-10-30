@@ -111,3 +111,62 @@ export const migrateWordsFromSmashes = internalMutation({
     };
   },
 });
+
+/**
+ * Migration script to remove duplicate words from wordsDb table.
+ * Keeps only one instance of each word (the first one by _creationTime).
+ * Different categories are allowed - only exact word duplicates are removed.
+ */
+export const removeDuplicateWords = internalMutation({
+  args: {},
+  returns: v.object({
+    duplicatesFound: v.number(),
+    wordsRemoved: v.number(),
+  }),
+  handler: async (ctx) => {
+    console.log("Starting duplicate word removal...");
+
+    // Get all words from wordsDb
+    const allWords = await ctx.db.query("wordsDb").collect();
+    console.log(`Found ${allWords.length} total words in wordsDb`);
+
+    // Group by word to find duplicates
+    const wordGroups = new Map<string, typeof allWords>();
+
+    for (const word of allWords) {
+      if (!wordGroups.has(word.word)) {
+        wordGroups.set(word.word, []);
+      }
+      wordGroups.get(word.word)!.push(word);
+    }
+
+    let duplicatesFound = 0;
+    let wordsRemoved = 0;
+
+    // Process each group that has duplicates
+    for (const [word, instances] of wordGroups) {
+      if (instances.length > 1) {
+        duplicatesFound++;
+        console.log(`Found ${instances.length} duplicates for word: "${word}"`);
+
+        // Sort by _creationTime (oldest first) and keep the first one
+        instances.sort((a, b) => a._creationTime - b._creationTime);
+
+        // Remove all but the first instance
+        for (let i = 1; i < instances.length; i++) {
+          await ctx.db.delete(instances[i]._id);
+          wordsRemoved++;
+          console.log(`Removed duplicate: "${word}" (ID: ${instances[i]._id})`);
+        }
+
+        console.log(`Kept first instance: "${word}" (ID: ${instances[0]._id}, category: ${instances[0].category})`);
+      }
+    }
+
+    console.log(`Duplicate removal completed: found ${duplicatesFound} duplicate groups, removed ${wordsRemoved} words`);
+    return {
+      duplicatesFound,
+      wordsRemoved,
+    };
+  },
+});
