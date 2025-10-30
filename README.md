@@ -83,9 +83,12 @@ This command runs both the frontend (Vite) and backend (Convex) in parallel. The
 ```
 smashaday/
 ├── convex/                 # Backend functions and schema
-│   ├── schema.ts          # Database schema (smashes, daily_challenges)
+│   ├── schema.ts          # Database schema (smashes, daily_challenges, wordsDb)
 │   ├── queries.ts         # Query functions
 │   ├── daily_challenge.ts # Daily challenge logic
+│   ├── generateWords.ts   # AI word generation for categories
+│   ├── insertWords.ts     # Word insertion mutations
+│   ├── migrateWordsDb.ts  # Migration for existing wordsDb records
 │   ├── crons.ts           # Scheduled tasks
 │   └── seed.ts            # Database seeding
 ├── src/
@@ -121,7 +124,31 @@ smashaday/
 - `date` - ISO date string (YYYY-MM-DD)
 - `dailySmashes` - Array of smash IDs for that day
 
+### `wordsDb` Table
+- `category` - Category name (indexed)
+- `words` - Record of word/phrase to boolean (false = unused, true = used)
+
 ## Development
+
+### Word Generation
+
+The game uses AI-generated word lists for categories stored in the `wordsDb` table. To populate empty categories with words:
+
+1. Set the `OPENROUTER_API_KEY` environment variable in your Convex dashboard
+2. Run the word generation action:
+   ```bash
+   npx convex run generateWords:generateWords
+   ```
+
+This action will:
+- Find categories with empty word lists
+- Generate 15-25 words/phrases for each category using OpenAI's GPT-4 via OpenRouter
+- Store the results in the database with retry logic for failed generations
+
+To migrate existing `wordsDb` records with non-string keys or values:
+```bash
+npx convex run migrateWordsDb:migrateWordsDb
+```
 
 ### Code Quality
 

@@ -22,5 +22,10 @@ export default defineSchema({
     // this the Clerk ID, stored in the subject JWT field
     externalId: v.string(),
     challengeScores: v.record(v.id("daily_challenges"), v.number()),
-}).index("byExternalId", ["externalId"]),
+  }).index("byExternalId", ["externalId"]),
+
+  wordsDb: defineTable({
+    category: v.string(),
+    words: v.record(v.string(), v.boolean()),
+  }).index("by_category", ["category"]),
 })
