@@ -73,3 +73,15 @@ async function userByExternalId(ctx: QueryCtx, externalId: string) {
     .withIndex("byExternalId", (q) => q.eq("externalId", externalId))
     .unique();
 }
+
+export const isAdmin = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return { isAdmin: false };
+    //using a custom claim in Clerk JWT:
+    const publicMetadata = identity.public_metadata as any;
+    if (!publicMetadata?.isAdmin) return { isAdmin: false };
+    return { isAdmin: true };
+  },
+});

@@ -1,4 +1,4 @@
-import { query } from "./_generated/server";
+import { query, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 
 export const getDailyChallengeByDate = query({
@@ -34,5 +34,26 @@ export const getAllUsers = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("users").collect();
+  },
+});
+
+export const getUniqueCategories = internalQuery({
+  args: {},
+  returns: v.object({
+    category1: v.array(v.string()),
+    category2: v.array(v.string()),
+  }),
+  handler: async (ctx) => {
+    const smashes = await ctx.db.query("smashes").collect();
+    const category1Set = new Set<string>();
+    const category2Set = new Set<string>();
+    for (const smash of smashes) {
+      category1Set.add(smash.category1);
+      category2Set.add(smash.category2);
+    }
+    return {
+      category1: Array.from(category1Set).sort(),
+      category2: Array.from(category2Set).sort(),
+    };
   },
 });
