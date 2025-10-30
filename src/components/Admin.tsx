@@ -25,21 +25,23 @@ export default function AdminPage() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setResult(null);
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      setResult(null);
 
-    try {
-      const res = await addCategories({ categoriesString: categoriesInput });
-      setResult(res);
-      setCategoriesInput("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setLoading(false);
-    }
+      try {
+        const res = await addCategories({ categoriesString: categoriesInput });
+        setResult(res);
+        setCategoriesInput("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    })();
   };
 
   return (
