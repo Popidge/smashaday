@@ -88,7 +88,6 @@ smashaday/
 │   ├── daily_challenge.ts # Daily challenge logic
 │   ├── generateWords.ts   # AI word generation for categories
 │   ├── insertWords.ts     # Word insertion mutations
-│   ├── migrateWordsDb.ts  # Migration for existing wordsDb records
 │   ├── crons.ts           # Scheduled tasks
 │   └── seed.ts            # Database seeding
 ├── src/
@@ -142,13 +141,8 @@ The game uses AI-generated word lists for categories stored in the `wordsDb` tab
 
 This action will:
 - Find categories with empty word lists
-- Generate 15-25 words/phrases for each category using OpenAI's GPT-4 via OpenRouter
+- Generate 15-25 words/phrases for each category using OpenAI's GPT-OSS-120B via OpenRouter
 - Store the results in the database with retry logic for failed generations
-
-To migrate existing `wordsDb` records with non-string keys or values:
-```bash
-npx convex run migrateWordsDb:migrateWordsDb
-```
 
 ### Code Quality
 

@@ -41,14 +41,14 @@ export const listCategoriesNeedingWords = internalQuery({
   args: {},
   returns: v.array(
     v.object({
-      id: v.id("wordsDb"),
+      id: v.id("categories"),
       category: v.string(),
     }),
   ),
   handler: async (ctx) => {
-    const allRows = await ctx.db.query("wordsDb").collect();
+    const allRows = await ctx.db.query("categories").collect();
     return allRows
-      .filter((row) => Object.keys(row.words).length === 0)
+      .filter((row) => row.words < 15)
       .map((row) => ({ id: row._id, category: row.category }));
   },
 });
@@ -58,16 +58,25 @@ export const listAllWordsDb = internalQuery({
   returns: v.array(
     v.object({
       id: v.id("wordsDb"),
+      word: v.string(),
       category: v.string(),
-      words: v.record(v.string(), v.boolean()),
+      clue: v.string(),
+      clueStatus: v.union(
+        v.literal("pending"),
+        v.literal("enriched"),
+        v.literal("fallback"),
+        v.literal("failed")
+      ),
     }),
   ),
   handler: async (ctx) => {
     const allRows = await ctx.db.query("wordsDb").collect();
     return allRows.map((row) => ({
       id: row._id,
+      word: row.word,
       category: row.category,
-      words: row.words,
+      clue: row.clue,
+      clueStatus: row.clueStatus,
     }));
   },
 });
@@ -79,27 +88,40 @@ export const insertWords = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const row = await ctx.db
-      .query("wordsDb")
+    const categoryRow = await ctx.db
+      .query("categories")
       .withIndex("by_category", (q) => q.eq("category", args.category))
       .unique();
 
-    if (!row) {
-      throw new Error(`Category "${args.category}" not found in wordsDb`);
+    if (!categoryRow) {
+      throw new Error(`Category "${args.category}" not found in categories`);
     }
 
-    const wordsRecord: Record<string, boolean> = {};
     const seenKeys = new Set<string>();
 
     for (const word of args.words) {
       const sanitizedKey = sanitizeWordKey(String(word));
       if (sanitizedKey && !seenKeys.has(sanitizedKey)) {
-        wordsRecord[String(sanitizedKey)] = Boolean(false);
+        await ctx.db.insert("wordsDb", {
+          word: sanitizedKey,
+          category: args.category,
+          clue: "",
+          clueStatus: "pending",
+        });
         seenKeys.add(sanitizedKey);
       }
     }
 
-    await ctx.db.patch(row._id, { words: wordsRecord });
+    // Count the total words for this category
+    const wordCount = await ctx.db
+      .query("wordsDb")
+      .withIndex("by_category_clueStatus", (q) => q.eq("category", args.category))
+      .collect()
+      .then((docs) => docs.length);
+
+    // Update the categories table with the new word count
+    await ctx.db.patch(categoryRow._id, { words: wordCount });
+
     return null;
   },
 });

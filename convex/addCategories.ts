@@ -35,16 +35,16 @@ export const addCategories = mutation({
     for (const category of uniqueCategories) {
       // Check if category already exists
       const existing = await ctx.db
-        .query("wordsDb")
+        .query("categories")
         .withIndex("by_category", (q) => q.eq("category", category))
         .unique();
 
       if (existing) {
         skippedCount++;
       } else {
-        await ctx.db.insert("wordsDb", {
+        await ctx.db.insert("categories", {
           category,
-          words: {},
+          words: 0,
         });
         insertedCount++;
         insertedCategories.push(category);

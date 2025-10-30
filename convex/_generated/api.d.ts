@@ -15,10 +15,12 @@ import type * as generateWords from "../generateWords.js";
 import type * as http from "../http.js";
 import type * as insertWords from "../insertWords.js";
 import type * as migrateUserScores from "../migrateUserScores.js";
-import type * as migrateWordsDb from "../migrateWordsDb.js";
+import type * as migrateWords from "../migrateWords.js";
 import type * as queries from "../queries.js";
 import type * as saveDailyScores from "../saveDailyScores.js";
 import type * as seed from "../seed.js";
+import type * as smashDbOps from "../smashDbOps.js";
+import type * as smashGen from "../smashGen.js";
 import type * as users from "../users.js";
 
 import type {
@@ -43,10 +45,12 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   insertWords: typeof insertWords;
   migrateUserScores: typeof migrateUserScores;
-  migrateWordsDb: typeof migrateWordsDb;
+  migrateWords: typeof migrateWords;
   queries: typeof queries;
   saveDailyScores: typeof saveDailyScores;
   seed: typeof seed;
+  smashDbOps: typeof smashDbOps;
+  smashGen: typeof smashGen;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
