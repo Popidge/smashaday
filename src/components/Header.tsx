@@ -122,7 +122,9 @@ export default function Header() {
         {/* Left: Home (compact on md+, full label on small) */}
         <div className="navbar-start gap-2">
           {/* compact home for md+ (hidden on small) */}
-          <a href="#" className="btn btn-ghost btn-sm hidden md:inline-flex" aria-label="Go to home">🏷️</a>
+          <a href="#" className="btn btn-ghost btn-sm hidden md:inline-flex" aria-label="Go to home">
+            <img src="/smashaday_logo.svg" alt="SmashADay logo" className="w-6 h-6" />
+          </a>
           {/* full label for small screens (hidden on md+) */}
           <a href="#" className="btn btn-ghost btn-sm md:hidden" aria-label="Go to home">SmashADay</a>
 
