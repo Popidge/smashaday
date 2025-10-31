@@ -49,6 +49,7 @@ export default function App() {
       <>
         <Header />
         <Game />
+        <Footer />
       </>
     );
   }
@@ -56,7 +57,7 @@ export default function App() {
   return (
     <>
       <Header />
-      <main className="flex flex-col items-center justify-center min-h-screen p-4">
+      <main className="flex flex-col items-center justify-start min-h-screen p-4 sm:pt-12 md:pt-16">
         <h1 className="text-4xl font-bold mb-4">{challengeNumber ? `SmashADay #${challengeNumber}` : "SmashADay"}</h1>
         <p className="text-lg mb-8">{new Date().toLocaleDateString()}</p>
         <button onClick={() => setShowGame(true)} className="btn btn-primary btn-lg">
