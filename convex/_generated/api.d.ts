@@ -20,6 +20,7 @@ import type * as migrateWords from "../migrateWords.js";
 import type * as queries from "../queries.js";
 import type * as saveDailyScores from "../saveDailyScores.js";
 import type * as seed from "../seed.js";
+import type * as smashCompiler from "../smashCompiler.js";
 import type * as smashDbOps from "../smashDbOps.js";
 import type * as smashGen from "../smashGen.js";
 import type * as users from "../users.js";
@@ -51,6 +52,7 @@ declare const fullApi: ApiFromModules<{
   queries: typeof queries;
   saveDailyScores: typeof saveDailyScores;
   seed: typeof seed;
+  smashCompiler: typeof smashCompiler;
   smashDbOps: typeof smashDbOps;
   smashGen: typeof smashGen;
   users: typeof users;

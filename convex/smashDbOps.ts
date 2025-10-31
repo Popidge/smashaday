@@ -176,3 +176,153 @@ export const updateWordClue = internalMutation({
     return null;
   },
 });
+
+/**
+ * Returns all rows from pendingSmashes table with full fields.
+ */
+export const getPendingSmashesAll = internalQuery({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("pendingSmashes"),
+      _creationTime: v.number(),
+      word1: v.string(),
+      category1: v.string(),
+      word2: v.string(),
+      category2: v.string(),
+      smash: v.string(),
+      status: v.union(
+        v.literal("pending"),
+        v.literal("compiled"),
+        v.literal("failed")
+      ),
+    }),
+  ),
+  handler: async (ctx) => {
+    return await ctx.db.query("pendingSmashes").collect();
+  },
+});
+
+/**
+ * Queries smashes table for existing pair (order-agnostic).
+ * Returns the smash document if found, null otherwise.
+ */
+export const getSmashByWordPair = internalQuery({
+  args: {
+    word1: v.string(),
+    word2: v.string(),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("smashes"),
+      _creationTime: v.number(),
+      word1: v.string(),
+      word2: v.string(),
+      category1: v.string(),
+      category2: v.string(),
+      smash: v.string(),
+      clue1: v.string(),
+      clue2: v.string(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    // Check both orders since pairs are order-agnostic
+    const smash1 = await ctx.db
+      .query("smashes")
+      .filter((q) => q.eq(q.field("word1"), args.word1) && q.eq(q.field("word2"), args.word2))
+      .unique();
+    if (smash1) return smash1;
+
+    const smash2 = await ctx.db
+      .query("smashes")
+      .filter((q) => q.eq(q.field("word1"), args.word2) && q.eq(q.field("word2"), args.word1))
+      .unique();
+    return smash2 || null;
+  },
+});
+
+/**
+ * Inserts a new smash document into the smashes table.
+ */
+export const insertSmash = internalMutation({
+  args: {
+    word1: v.string(),
+    category1: v.string(),
+    word2: v.string(),
+    category2: v.string(),
+    smash: v.string(),
+    clue1: v.string(),
+    clue2: v.string(),
+  },
+  returns: v.id("smashes"),
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("smashes", args);
+  },
+});
+
+/**
+ * Updates an existing smash document in the smashes table.
+ */
+export const updateSmash = internalMutation({
+  args: {
+    id: v.id("smashes"),
+    word1: v.optional(v.string()),
+    category1: v.optional(v.string()),
+    word2: v.optional(v.string()),
+    category2: v.optional(v.string()),
+    smash: v.optional(v.string()),
+    clue1: v.optional(v.string()),
+    clue2: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { id, ...patch } = args;
+    await ctx.db.patch(id, patch);
+    return null;
+  },
+});
+
+/**
+ * Deletes a pending smash document from the pendingSmashes table.
+ */
+export const deletePendingSmash = internalMutation({
+  args: {
+    id: v.id("pendingSmashes"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+    return null;
+  },
+});
+
+/**
+ * Queries smashes table for existing smash by smash string using by_smash index.
+ * Returns the smash document if found, null otherwise.
+ */
+export const getSmashBySmash = internalQuery({
+  args: {
+    smash: v.string(),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("smashes"),
+      _creationTime: v.number(),
+      word1: v.string(),
+      word2: v.string(),
+      category1: v.string(),
+      category2: v.string(),
+      smash: v.string(),
+      clue1: v.string(),
+      clue2: v.string(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("smashes")
+      .withIndex("by_smash", (q) => q.eq("smash", args.smash))
+      .unique();
+  },
+});
