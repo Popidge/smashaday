@@ -25,3 +25,5 @@ dist-ssr
 
 .kilocode/*
 .cursor/*
+
+/convex_dev_export/*
