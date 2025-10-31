@@ -1,5 +1,249 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Fonts & typographic scale for a retro VHS feel
+   - Orbitron for display elements (cassette labels, headings)
+   - Inter for body text (clean, legible)
+   - Roboto Mono for cassette/label monospace accents
+*/
+
+/* Motion utilities */
+.motion-fade-in {
+  animation: ms-fade-in 220ms cubic-bezier(.2,.9,.2,1) both;
+}
+@keyframes ms-fade-in {
+  from { opacity: 0; transform: translateY(6px) scale(.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.motion-pop {
+  transition: transform 140ms cubic-bezier(.2,.9,.2,1), box-shadow 140ms;
+}
+.motion-pop:active {
+  transform: translateY(1px) scale(.995);
+  box-shadow: none;
+}
+
+/* subtle ring for focus states */
+.focus-ring {
+  transition: box-shadow 160ms;
+}
+.focus-ring:focus {
+  box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.06);
+  outline: none;
+}
+
+/* Mobile menu open/close animation (small, performant) */
+.menu-panel {
+  transform-origin: top right;
+  will-change: opacity, transform;
+  animation-duration: 200ms;
+  animation-fill-mode: both;
+}
+@keyframes menu-scale-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes menu-scale-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-6px) scale(0.98); }
+}
+
+/* helpers to apply the animations */
+.menu-open {
+  animation-name: menu-scale-in;
+}
+.menu-close {
+  animation-name: menu-scale-out;
+}
+
+/* Mobile menu close button polish */
+.menu-close-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 140ms cubic-bezier(.2,.9,.2,1), box-shadow 140ms, background-color 140ms;
+  background: transparent;
+  border-radius: 9999px;
+}
+.menu-close-btn:hover {
+  background-color: rgba(255,255,255,0.03);
+  transform: translateY(-52%) scale(1.03);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+}
+.menu-close-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 6px rgba(139,92,246,0.08);
+  transform: translateY(-52%) scale(1.03);
+}
+
+:root {
+  /* Fonts */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Orbitron", var(--font-sans);
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, "Courier New", monospace;
+
+  /* Type scale (compact and clear like Wordle) */
+  --text-xxs: 0.625rem; /* 10px */
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-base: 1rem;    /* 16px */
+  --text-lg: 1.125rem;  /* 18px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.25rem;  /* 36px */
+
+  /* Micro typography tokens */
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-wide: 0.08em;
+
+  /* UI scale helpers for consistent sizing */
+  --ui-radius-sm: 0.25rem;
+  --ui-radius-md: 0.5rem;
+  --ui-radius-lg: 1rem;
+}
+
+/* Apply base fonts & smoothing */
+html, body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utility helpers for display/label text */
+.h-display { font-family: var(--font-display); font-size: var(--text-3xl); letter-spacing: var(--letter-spacing-tight); }
+.h-strong { font-family: var(--font-display); font-size: var(--text-2xl); }
+.cassette-label { font-family: var(--font-mono); letter-spacing: 0.12em; font-weight: 700; font-size: var(--text-xs); }
+
+/* Small responsive tweaks so type scales crisply on phones */
+@media (max-width: 480px) {
+  :root {
+    --text-2xl: 1.25rem;
+    --text-3xl: 1.5rem;
+    --text-4xl: 1.875rem;
+  }
+}
+
+/* subtle cassette stripe and noise accents (used as utility classes) */
+.cassette-stripe {
+  /* tight vertical stripes like cassette label grooves */
+  background-image:
+    linear-gradient(90deg, rgba(0,0,0,0.07) 0.5px, transparent 0.5px),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+  background-size: 6px 100%, 100% 100%;
+  background-repeat: repeat-x;
+}
+
+.cassette-noise {
+  /* very subtle noise via an inline SVG to avoid external assets */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='1' stitchTiles='stitch' seed='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.03' /></svg>");
+  background-repeat: repeat;
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+}
+
+/* helper to compose cassette label look */
+.cassette-label-bg {
+  background: linear-gradient(180deg, rgba(0,0,0,0.03), rgba(255,255,255,0.01));
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: var(--ui-radius-sm);
+  padding: 0.25rem 0.5rem;
+  display: inline-block;
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.02);
+}
+
+/* daisyUI plugin with custom VHS themes */
 @plugin "daisyui" {
-  themes: cmyk --default, halloween --prefersdark;
-};
+  themes: vhs --default, vhs-dark --prefersdark;
+  logs: false;
+}
+
+/* 80s VHS/Betamax inspired theme - light */
+@plugin "daisyui/theme" {
+  name: "vhs";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: oklch(98% 0.02 95);
+  --color-base-200: oklch(95% 0.03 95);
+  --color-base-300: oklch(92% 0.04 95);
+  --color-base-content: oklch(20% 0.05 240);
+
+  --color-primary: oklch(60% 0.28 330);
+  --color-primary-content: oklch(98% 0.01 330);
+  --color-secondary: oklch(72% 0.21 200);
+  --color-secondary-content: oklch(98% 0.01 200);
+  --color-accent: oklch(78% 0.20 85);
+  --color-accent-content: oklch(18% 0.03 85);
+  --color-neutral: oklch(32% 0.03 240);
+  --color-neutral-content: oklch(98% 0.01 240);
+
+  --color-info: oklch(70% 0.20 230);
+  --color-info-content: oklch(98% 0.01 230);
+  --color-success: oklch(64% 0.22 150);
+  --color-success-content: oklch(98% 0.01 150);
+  --color-warning: oklch(78% 0.22 80);
+  --color-warning-content: oklch(20% 0.05 80);
+  --color-error: oklch(60% 0.27 25);
+  --color-error-content: oklch(98% 0.01 25);
+
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+
+  --border: 1px;
+
+  --depth: 1;
+  --noise: 0;
+}
+
+/* 80s VHS/Betamax inspired theme - dark */
+@plugin "daisyui/theme" {
+  name: "vhs-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: oklch(22% 0.02 240);
+  --color-base-200: oklch(18% 0.02 240);
+  --color-base-300: oklch(14% 0.02 240);
+  --color-base-content: oklch(96% 0.02 240);
+
+  --color-primary: oklch(70% 0.30 330);
+  --color-primary-content: oklch(12% 0.02 330);
+  --color-secondary: oklch(75% 0.25 200);
+  --color-secondary-content: oklch(12% 0.02 200);
+  --color-accent: oklch(72% 0.22 85);
+  --color-accent-content: oklch(12% 0.02 85);
+  --color-neutral: oklch(30% 0.03 240);
+  --color-neutral-content: oklch(96% 0.02 240);
+
+  --color-info: oklch(70% 0.20 230);
+  --color-info-content: oklch(12% 0.02 230);
+  --color-success: oklch(66% 0.24 150);
+  --color-success-content: oklch(12% 0.02 150);
+  --color-warning: oklch(78% 0.22 80);
+  --color-warning-content: oklch(16% 0.02 80);
+  --color-error: oklch(62% 0.27 25);
+  --color-error-content: oklch(12% 0.02 25);
+
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+
+  --border: 1px;
+
+  --depth: 1;
+  --noise: 0;
+}

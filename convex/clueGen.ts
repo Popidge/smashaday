@@ -52,7 +52,7 @@ async function fetchContext(word: string, category: string, dryRun: boolean = fa
   for (let attempt = 0; attempt < backoffs.length; attempt++) {
     try {
       const response = await tavilyClient.search(query, {
-        // @ts-ignore - "advanced" is valid but types are incorrect in SDK - open PR
+        // @ts-expect-error - "advanced" is valid but types are incorrect in SDK - open PR
         includeAnswer: "advanced",
         maxResults: 3,
       });

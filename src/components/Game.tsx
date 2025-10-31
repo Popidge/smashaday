@@ -157,76 +157,165 @@ export default function Game() {
       </div>
     );
   }
-
-  if (!currentSmash) return null;
-
+ 
+  if (!currentSmash) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-6 bg-base-200">
+        <section className="w-full max-w-sm sm:max-w-md md:max-w-lg rounded-lg shadow-2xl overflow-hidden border border-base-300 bg-base-100 p-6">
+          <div className="skeleton h-6 w-40 mb-4"></div>
+          <div className="skeleton h-5 w-full mb-2"></div>
+          <div className="skeleton h-5 w-full mb-2"></div>
+          <div className="skeleton h-10 w-full mt-4"></div>
+        </section>
+      </div>
+    );
+  }
+ 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="card bg-base-100 shadow-xl max-w-md w-full">
-        <div className="card-body">
-          <h2 className="card-title justify-center">
+    <main className="flex justify-center items-start md:items-center min-h-screen p-4 sm:pt-8 sm:pb-8 bg-base-200">
+      <section
+        className="w-full max-w-sm sm:max-w-md md:max-w-lg rounded-lg shadow-2xl overflow-hidden border border-base-300 bg-base-100 cassette-stripe"
+        role="region"
+        aria-labelledby="question-heading"
+      >
+        {/* Cassette-style top stripe */}
+        <div className="px-6 py-3 flex items-center justify-between bg-gradient-to-r from-primary/15 via-transparent to-secondary/10">
+          <h2 id="question-heading" className="text-sm font-bold tracking-widest text-base-content/80">
             Question {currentIndex + 1}/10
           </h2>
-          <div className="text-center mb-4">
-            <p>
-              <span className="badge badge-primary badge-sm badge-soft">&nbsp;{titleCase(currentSmash.category1)}&nbsp;</span>
-              <span className="mx-2">+</span>
-              <span className="badge badge-secondary badge-sm badge-soft">&nbsp;{titleCase(currentSmash.category2)}&nbsp;</span>
-            </p>
-            <p className="text-lg text-base-content/70 mt-2">
-              {currentSmash.clue1} 
-            </p>
-            <p className="text-lg text-base-content/70 mt-2">
-              + 
-            </p>
-            <p className="text-lg text-base-content/70 mt-2">
-              {currentSmash.clue2}
-            </p>
+
+          <div className="flex gap-2 items-center">
+            <span className="text-xs text-base-content/60">Smash #{challenge ? challengeNumber : "—"}</span>
+            <div className="h-2 w-16 bg-gradient-to-r from-accent/80 to-primary/80 rounded-sm shadow-inner"></div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Categories - retro badges */}
+          <div className="flex items-center justify-center gap-3" aria-hidden>
+            <span className="px-3 py-1 rounded-md border border-base-300 bg-base-200 text-xs font-semibold tracking-wide">
+              {titleCase(currentSmash.category1)}
+            </span>
+            <span className="text-lg text-base-content/40 font-mono">+</span>
+            <span className="px-3 py-1 rounded-md border border-base-300 bg-base-200 text-xs font-semibold tracking-wide">
+              {titleCase(currentSmash.category2)}
+            </span>
           </div>
 
+          {/* Clues - cassette label style */}
+          <div className="bg-base-200/60 border border-base-300 rounded-md p-4 font-sans text-center">
+            <p className="text-lg text-base-content/80 mb-2">{currentSmash.clue1}</p>
+            <p className="text-lg text-base-content/80">+</p>
+            <p className="text-lg text-base-content/80 mt-2">{currentSmash.clue2}</p>
+          </div>
+
+          {/* Input area */}
           {gameState === "playing" && (
-            <>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+              }}
+              className="space-y-3"
+              aria-label="Answer form"
+            >
+              <label htmlFor="answer" className="sr-only">Answer</label>
               <input
+                id="answer"
                 ref={inputRef}
+                autoFocus
                 type="text"
-                placeholder="Your answer..."
-                className="input input-bordered w-full"
+                inputMode="text"
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                enterKeyHint="done"
+                placeholder="Type your answer and press Enter"
+                aria-describedby="answer-help"
+                className="w-full input input-bordered sm:input-lg text-center tracking-widest text-base sm:text-lg placeholder:text-base-content/40 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow focus-ring"
                 value={userAnswer}
                 onChange={(e) => setUserAnswer(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSubmit();
+                  if (e.key === "Escape") {
+                    setUserAnswer("");
+                    inputRef.current?.focus();
                   }
                 }}
+                aria-required
               />
-              <button onClick={handleSubmit} className="btn btn-primary w-full">
-                Submit
-              </button>
-            </>
+              <p id="answer-help" className="text-xs text-base-content/50 mt-2">
+                Press Enter to submit • Press Esc to clear • Use letters and numbers only
+              </p>
+
+              <div className="flex gap-3">
+                <button type="submit" className="btn btn-primary flex-1" aria-label="Submit answer">
+                  Submit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setUserAnswer(''); inputRef.current?.focus(); }}
+                  className="btn btn-ghost"
+                  aria-label="Clear answer"
+                >
+                  Clear
+                </button>
+              </div>
+            </form>
           )}
 
+          {/* Feedback */}
           {gameState === "feedback" && (
-            <div className="text-center">
-              <p className={cn("text-2xl font-bold mb-2", isCorrect ? "text-success" : "text-error")}>
-                {isCorrect ? "Correct!" : "Incorrect!"}
+            <div
+              className={cn(
+                "rounded-md p-4 text-center motion-fade-in",
+                isCorrect ? "bg-success/10 border border-success" : "bg-error/10 border border-error"
+              )}
+              role="status"
+              aria-live="polite"
+            >
+              <p className={cn("text-xl font-bold mb-2", isCorrect ? "text-success" : "text-error")}>
+                {isCorrect ? "Correct!" : "Incorrect"}
               </p>
-              <p className="text-lg mb-4">
+              <p className="text-base mb-3">
                 {currentSmash.word1} + {currentSmash.word2} ={" "}
                 <span dangerouslySetInnerHTML={{ __html: highlightPortmanteau(currentSmash.word1, currentSmash.word2, currentSmash.smash) }} />
               </p>
-              <button onClick={handleNext} className="btn btn-primary">
-                {currentIndex < 9 ? "Next Question" : "Finish"}
+              <button onClick={handleNext} className="btn btn-primary motion-pop">
+                {currentIndex < 9 ? "Next" : "Finish"}
               </button>
             </div>
           )}
 
+          {/* Progress row */}
+          <div className="flex items-center justify-center gap-2 mt-1" aria-hidden>
+            {Array.from({ length: 10 }).map((_, i) => {
+              const val = score[i];
+              const filled = typeof val === "boolean";
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-7 h-7 rounded-sm flex items-center justify-center text-xs font-bold",
+                    filled
+                      ? (val ? "bg-success text-success-content motion-fade-in" : "bg-base-300 text-base-content/60 motion-fade-in")
+                      : "bg-base-200 text-base-content/40"
+                  )}
+                  title={`Question ${i + 1}`}
+                >
+                  {filled ? (val ? "✓" : "—") : i + 1}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Small score for context */}
           {currentIndex > 0 && (
-            <div className="text-center text-sm text-base-content/50 mt-4">
+            <div className="text-center text-sm text-base-content/60 mt-2">
               Score: {score.filter(Boolean).length}
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
