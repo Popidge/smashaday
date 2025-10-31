@@ -19,8 +19,8 @@ export default function Footer() {
         </div>
 
         <div className="flex gap-2">
-          <a href="https://github.com/popidge" className="btn btn-ghost btn-sm" aria-label="View source on GitHub">Source</a>
-          <a href="mailto:hello@example.com" className="btn btn-ghost btn-sm">Contact</a>
+          <a href="https://github.com/popidge/smashaday" className="btn btn-ghost btn-sm" aria-label="View source on GitHub">Source</a>
+          <a href="mailto:popidge@smashaday.app" className="btn btn-ghost btn-sm">Contact</a>
         </div>
       </div>
     </footer>
