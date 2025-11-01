@@ -58,6 +58,15 @@ export const getUniqueCategories = internalQuery({
   },
 });
 
+export const getAllCategories = query({
+  args: {},
+  returns: v.array(v.string()),
+  handler: async (ctx) => {
+    const categories = await ctx.db.query("categories").collect();
+    return categories.map(cat => cat.category).sort();
+  },
+});
+
 export const getDailyChallenges = query({
   args: {
     limit: v.optional(v.number()),

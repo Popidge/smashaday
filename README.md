@@ -209,3 +209,7 @@ Contributing
 License
 
 MIT — fan-created puzzle inspired by Answer Smash (Richard Osman's House of Games).
+
+TODO
+
+- migration - all words in wordsDb to lowercase

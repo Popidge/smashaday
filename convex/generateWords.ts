@@ -7,6 +7,7 @@ import { internal } from "./_generated/api";
 
 /**
  * Sanitizes a word/phrase to be a valid Convex record key.
+ * - Convert to lowercase
  * - Transliterate accents to ASCII (crème brûlée → creme brulee)
  * - Strip non-ASCII/control characters
  * - Collapse multiple whitespace to single space
@@ -15,8 +16,11 @@ import { internal } from "./_generated/api";
  * - Dedupe collisions by keeping first occurrence
  */
 function sanitizeWordKey(word: string): string {
+  // Convert to lowercase first
+  let sanitized = word.toLowerCase();
+
   // Basic transliteration for common accents
-  let sanitized = word
+  sanitized = sanitized
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
     .replace(/æ/g, 'ae')
