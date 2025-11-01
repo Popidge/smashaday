@@ -17,6 +17,7 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
   const [userAnswer, setUserAnswer] = useState("");
   const [isCorrect, setIsCorrect] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>("");
+  const [isMobile, setIsMobile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { isSignedIn, userId: clerkUserId } = useAuth();
@@ -27,10 +28,20 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
   // Always call hooks in same order — use "skip" when we don't have a clerkId or archive context
   const userScores = useQuery(
     api.users.getUserScores,
-    isSignedIn && archive && archiveChallengeId ? { clerkId: clerkUserId! } : "skip"
+    isSignedIn && archive && archiveChallengeId ? { clerkId: clerkUserId } : "skip"
   );
 
   const saveDailyScores = useMutation(api.saveDailyScores.saveDailyScores);
+
+  // Mobile detection
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 480px)");
+    setIsMobile(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   const currentSmashId = challenge?.dailySmashes[currentIndex];
   const currentSmash = useQuery(api.queries.getSmashById, currentSmashId ? { id: currentSmashId } : "skip");
@@ -38,11 +49,13 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
   useEffect(() => {
     if (challenge && challengeNumber && currentSmash) {
       setGameState("playing");
-      inputRef.current?.focus();
+      if (!isMobile) {
+        inputRef.current?.focus();
+      }
     } else if (challenge === null) {
       setGameState("finished");
     }
-  }, [archive, archiveChallengeId, challenge, challengeNumber, currentSmash]);
+  }, [archive, archiveChallengeId, challenge, challengeNumber, currentSmash, isMobile]);
 
   const handleSubmit = () => {
     if (!currentSmash) return;
@@ -53,16 +66,18 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
     setGameState("feedback");
   };
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentIndex < 9) {
       setCurrentIndex(prev => prev + 1);
       setUserAnswer("");
       setGameState("playing");
-      inputRef.current?.focus();
+      if (!isMobile) {
+        inputRef.current?.focus();
+      }
     } else {
       setGameState("finished");
     }
-  };
+  }, [currentIndex, isMobile]);
 
   const handleRestart = () => {
     setCurrentIndex(0);
@@ -70,7 +85,9 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
     setUserAnswer("");
     setSaveMessage("");
     setGameState("playing");
-    inputRef.current?.focus();
+    if (!isMobile) {
+      inputRef.current?.focus();
+    }
   };
 
   const copyShareSummary = async () => {
@@ -120,6 +137,19 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
       })();
     }
   }, [gameState, saveScore]);
+
+  // Handle Enter key to advance from feedback state
+  useEffect(() => {
+    if (gameState === "feedback") {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Enter") {
+          handleNext();
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [gameState, handleNext]);
 
   if (gameState === "loading") {
     return (
@@ -242,7 +272,6 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
               <input
                 id="answer"
                 ref={inputRef}
-                autoFocus
                 type="text"
                 inputMode="text"
                 autoComplete="off"
