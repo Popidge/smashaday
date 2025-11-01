@@ -27,7 +27,7 @@ export default function Archive() {
   // Always call the hook in the same order — use "skip" when not signed in.
   const userScores = useQuery(
     api.users.getUserScores,
-    isSignedIn ? { clerkId: clerkUserId! } : "skip"
+    isSignedIn ? { clerkId: clerkUserId } : "skip"
   );
 
   const handleChallengeClick = (challengeDate: string) => {
