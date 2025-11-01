@@ -38,7 +38,7 @@ High-priority fixes (blockers)
    - Problem: `componentDidCatch()` is empty at [`src/ErrorBoundary.tsx:55`]. Current fallback shows raw error text.
    - Implementation:
      - Implement `componentDidCatch(error, info)` to:
-       - Send sanitized error + stack to a logging endpoint (Sentry, console in dev).
+       - Send sanitized error + stack to a logging endpoint (Silent in production, console in dev). Vercel sets process.env.NODE_ENV to "production", so use that to determine environment. Considered sufficient for hobby project.
        - Add a "Reload" or "Retry" button to the fallback UI to aid recovery.
      - Ensure sensitive data is not leaked in production — show minimal UI to users in prod.
    - Files: [`src/ErrorBoundary.tsx`](src/ErrorBoundary.tsx:1).
