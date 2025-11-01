@@ -25,11 +25,11 @@ function SignInUpButton() {
 }
 
 /** Shows Admin button only for admins */
-function AdminButton() {
+function AdminButton({ className = "", onClick }: { className?: string; onClick?: () => void } = {}) {
   const adminStatus = useQuery(api.users.isAdmin);
   if (!adminStatus || !adminStatus.isAdmin) return null;
   return (
-    <a href="#admin" className="btn btn-sm btn-ghost" aria-label="Go to Admin">
+    <a href="#admin" className={`btn btn-sm btn-ghost ${className}`} onClick={onClick} aria-label="Go to Admin">
       Admin
     </a>
   );
@@ -135,7 +135,7 @@ export default function Header() {
 
           {/* Admin button only shown in header on md+ (mobile gets it in the menu) */}
           <div className="hidden md:block">
-            <AdminButton />
+            <AdminButton className="btn-sm" />
           </div>
         </div>
 
@@ -197,13 +197,10 @@ export default function Header() {
                   >
                     Archive
                   </a>
-                  <button
-                    className="btn btn-ghost justify-start w-full text-left"
+                  <AdminButton
+                    className="btn-ghost justify-start w-full text-left"
                     onClick={() => setMenuOpen(false)}
-                    aria-label="Admin"
-                  >
-                    Admin
-                  </button>
+                  />
 
                   <div className="flex items-center gap-3 py-2">
                     <div className="shrink-0">
