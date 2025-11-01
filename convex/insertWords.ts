@@ -1,5 +1,6 @@
-import { internalMutation, internalQuery } from "./_generated/server";
+import { internalMutation, internalQuery, mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 
 /**
  * Sanitizes a word/phrase to be a valid Convex record key.
@@ -78,6 +79,54 @@ export const listAllWordsDb = internalQuery({
       clue: row.clue,
       clueStatus: row.clueStatus,
     }));
+  },
+});
+
+export const insertSingleWord = mutation({
+  args: {
+    word: v.string(),
+    category: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Check if user is admin
+    const adminCheck = await ctx.runQuery(api.users.isAdmin, {});
+    if (!adminCheck.isAdmin) {
+      throw new Error("Unauthorized: Admin access required");
+    }
+
+    const sanitizedWord = sanitizeWordKey(args.word);
+    if (!sanitizedWord) {
+      throw new Error("Invalid word: cannot be empty after sanitization");
+    }
+
+    // Check if category exists
+    let categoryRow = await ctx.db
+      .query("categories")
+      .withIndex("by_category", (q) => q.eq("category", args.category))
+      .unique();
+
+    if (!categoryRow) {
+      // Create new category with wordCount: 1
+      const newCategoryId = await ctx.db.insert("categories", {
+        category: args.category,
+        words: 1,
+      });
+      categoryRow = await ctx.db.get(newCategoryId);
+    } else {
+      // Increment wordCount for existing category
+      await ctx.db.patch(categoryRow._id, { words: categoryRow.words + 1 });
+    }
+
+    // Insert the word
+    await ctx.db.insert("wordsDb", {
+      word: sanitizedWord,
+      category: args.category,
+      clue: "",
+      clueStatus: "pending",
+    });
+
+    return null;
   },
 });
 

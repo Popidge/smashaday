@@ -44,7 +44,8 @@ export default defineSchema({
   })
   .index("by_word", ["word"])
   .index("by_clueStatus", ["clueStatus"])
-  .index("by_category_clueStatus", ["category", "clueStatus"]),
+  .index("by_category_clueStatus", ["category", "clueStatus"])
+  .index("by_category", ["category"]),
 
   pendingSmashes: defineTable({
     word1: v.string(),

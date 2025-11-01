@@ -113,6 +113,45 @@ export const migrateWordsFromSmashes = internalMutation({
 });
 
 /**
+ * Migration script to convert all word fields in wordsDb to lowercase.
+ * This fixes smashgen issues caused by mixed case strategy.
+ */
+export const convertWordsToLowercase = internalMutation({
+  args: {},
+  returns: v.object({
+    wordsProcessed: v.number(),
+    wordsUpdated: v.number(),
+  }),
+  handler: async (ctx) => {
+    console.log("Starting word case conversion to lowercase...");
+
+    // Get all words from wordsDb
+    const allWords = await ctx.db.query("wordsDb").collect();
+    console.log(`Found ${allWords.length} total words in wordsDb`);
+
+    let wordsUpdated = 0;
+
+    // Process each word
+    for (const wordRecord of allWords) {
+      const lowercaseWord = wordRecord.word.toLowerCase();
+
+      if (wordRecord.word !== lowercaseWord) {
+        // Update the word to lowercase
+        await ctx.db.patch(wordRecord._id, { word: lowercaseWord });
+        wordsUpdated++;
+        console.log(`Converted "${wordRecord.word}" to "${lowercaseWord}"`);
+      }
+    }
+
+    console.log(`Word case conversion completed: processed ${allWords.length} words, updated ${wordsUpdated} words`);
+    return {
+      wordsProcessed: allWords.length,
+      wordsUpdated,
+    };
+  },
+});
+
+/**
  * Migration script to remove duplicate words from wordsDb table.
  * Keeps only one instance of each word (the first one by _creationTime).
  * Different categories are allowed - only exact word duplicates are removed.
