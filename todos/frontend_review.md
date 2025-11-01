@@ -113,9 +113,9 @@ Developer experience & tests
     - Estimated effort: 6–10 hours for initial tests.
 
 Implementation checklist (ordered)
-- [ ] High: Replace dangerouslySetInnerHTML usage by refactoring `highlightPortmanteau` to return JSX nodes (or sanitize).
+- [X] High: Replace dangerouslySetInnerHTML usage by refactoring `highlightPortmanteau` to return JSX nodes (or sanitize). - DONE, PR #5
   - Files: [`src/lib/utils.ts`](src/lib/utils.ts:1), [`src/components/Game.tsx`](src/components/Game.tsx:329).
-- [ ] High: Add `rel="noopener noreferrer"` to external links with `target="_blank"`.
+- [x] High: Add `rel="noopener noreferrer"` to external links with `target="_blank"`.
   - Files: [`src/ErrorBoundary.tsx`](src/ErrorBoundary.tsx:40).
 - [ ] High: Implement `componentDidCatch` logging + UI recovery in ErrorBoundary.
   - Files: [`src/ErrorBoundary.tsx`](src/ErrorBoundary.tsx:55).
