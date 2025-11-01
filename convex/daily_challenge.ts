@@ -19,47 +19,68 @@ export const generateDailyChallenge = internalMutation({
       return null; // Already exists, don't generate new one
     }
 
-    // Step 1: Look up the last 5 days' daily challenges to see which smashes have been used recently
+    // Step 1: Look up the last 5 days' daily challenges to see which smashes and words have been used recently
     const recentChallenges = await ctx.db
       .query("daily_challenges")
       .order("desc")
       .take(5);
 
     const usedSmashIds = new Set<string>();
+    const usedWords = new Set<string>();
     for (const challenge of recentChallenges) {
       for (const smashId of challenge.dailySmashes) {
         usedSmashIds.add(smashId);
+        const smash = await ctx.db.get(smashId);
+        if (smash) {
+          usedWords.add(smash.word1);
+          usedWords.add(smash.word2);
+        }
       }
     }
 
-    // Step 2: From the remaining smashes, pick the first available one in the table to be the first entry
+    // Step 2: Determine available smashes based on word usage
     const allSmashes = await ctx.db.query("smashes").collect();
     if (allSmashes.length < 10) {
       throw new Error(`Not enough smashes in database. Found ${allSmashes.length}, need at least 10.`);
     }
-    const availableSmashes = allSmashes.filter(smash => !usedSmashIds.has(smash._id));
+
+    // Strict filter: no words from last 5 days
+    let availableSmashes = allSmashes.filter(smash => !usedWords.has(smash.word1) && !usedWords.has(smash.word2));
+
+    if (availableSmashes.length < 10) {
+      // Relaxed filter: at most one word from last 5 days
+      availableSmashes = allSmashes.filter(smash => {
+        const shared = (usedWords.has(smash.word1) ? 1 : 0) + (usedWords.has(smash.word2) ? 1 : 0);
+        return shared <= 1;
+      });
+    }
+
+    if (availableSmashes.length < 10) {
+      // Fallback: exclude only recent smash IDs
+      availableSmashes = allSmashes.filter(smash => !usedSmashIds.has(smash._id));
+    }
 
     if (availableSmashes.length === 0) {
       throw new Error("No available smashes to generate daily challenge");
     }
 
     const dailySmashes: Id<"smashes">[] = [];
-    const usedWords = new Set<string>();
+    const challengeUsedWords = new Set<string>();
 
     // Pick first smash
     const firstSmash = availableSmashes[0];
     dailySmashes.push(firstSmash._id);
-    usedWords.add(firstSmash.word1);
-    usedWords.add(firstSmash.word2);
+    challengeUsedWords.add(firstSmash.word1);
+    challengeUsedWords.add(firstSmash.word2);
 
     // Step 3: Loop for the next 9 smashes
     let index = 1; // Start from the next smash
     while (dailySmashes.length < 10 && index < availableSmashes.length) {
       const candidate = availableSmashes[index];
-      if (!usedWords.has(candidate.word1) && !usedWords.has(candidate.word2)) {
+      if (!challengeUsedWords.has(candidate.word1) && !challengeUsedWords.has(candidate.word2)) {
         dailySmashes.push(candidate._id);
-        usedWords.add(candidate.word1);
-        usedWords.add(candidate.word2);
+        challengeUsedWords.add(candidate.word1);
+        challengeUsedWords.add(candidate.word2);
       }
       index++;
     }
@@ -70,11 +91,11 @@ export const generateDailyChallenge = internalMutation({
       while (dailySmashes.length < 10 && index < availableSmashes.length) {
         const candidate = availableSmashes[index];
         if (!dailySmashes.includes(candidate._id)) { // Not already picked
-          const sharedWords = (usedWords.has(candidate.word1) ? 1 : 0) + (usedWords.has(candidate.word2) ? 1 : 0);
+          const sharedWords = (challengeUsedWords.has(candidate.word1) ? 1 : 0) + (challengeUsedWords.has(candidate.word2) ? 1 : 0);
           if (sharedWords <= 1) {
             dailySmashes.push(candidate._id);
-            usedWords.add(candidate.word1);
-            usedWords.add(candidate.word2);
+            challengeUsedWords.add(candidate.word1);
+            challengeUsedWords.add(candidate.word2);
           }
         }
         index++;
