@@ -128,6 +128,11 @@ export default function Header() {
           {/* full label for small screens (hidden on md+) */}
           <a href="#" className="btn btn-ghost btn-sm md:hidden" aria-label="Go to home">SmashADay</a>
 
+          {/* Archive link */}
+          <a href="#archive" className="btn btn-ghost btn-sm" aria-label="Go to Archive">
+            Archive
+          </a>
+
           {/* Admin button only shown in header on md+ (mobile gets it in the menu) */}
           <div className="hidden md:block">
             <AdminButton />
@@ -184,6 +189,14 @@ export default function Header() {
                 </div>
 
                 <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
+                  <a
+                    href="#archive"
+                    className="btn btn-ghost justify-start w-full text-left"
+                    onClick={() => setMenuOpen(false)}
+                    aria-label="Archive"
+                  >
+                    Archive
+                  </a>
                   <button
                     className="btn btn-ghost justify-start w-full text-left"
                     onClick={() => setMenuOpen(false)}

@@ -9,7 +9,7 @@ import { useAuth } from "@clerk/clerk-react";
 
 type GameState = "loading" | "playing" | "feedback" | "finished";
 
-export default function Game() {
+export default function Game({ archive = false, archiveChallengeId }: { archive?: boolean; archiveChallengeId?: string } = {}) {
   const today = new Date().toISOString().split('T')[0];
   const [gameState, setGameState] = useState<GameState>("loading");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -21,8 +21,14 @@ export default function Game() {
 
   const { isSignedIn, userId: clerkUserId } = useAuth();
 
-  const challenge = useQuery(api.queries.getDailyChallengeByDate, { date: today });
-  const challengeNumber = useQuery(api.queries.getChallengeNumber, { date: today });
+  const dateToLoad = archive && archiveChallengeId ? archiveChallengeId : today;
+  const challenge = useQuery(api.queries.getDailyChallengeByDate, { date: dateToLoad });
+  const challengeNumber = useQuery(api.queries.getChallengeNumber, { date: dateToLoad });
+  // Always call hooks in same order — use "skip" when we don't have a clerkId or archive context
+  const userScores = useQuery(
+    api.users.getUserScores,
+    isSignedIn && archive && archiveChallengeId ? { clerkId: clerkUserId! } : "skip"
+  );
 
   const saveDailyScores = useMutation(api.saveDailyScores.saveDailyScores);
 
@@ -34,9 +40,9 @@ export default function Game() {
       setGameState("playing");
       inputRef.current?.focus();
     } else if (challenge === null) {
-      setGameState("finished"); // No challenge found
+      setGameState("finished");
     }
-  }, [challenge, challengeNumber, currentSmash]);
+  }, [archive, archiveChallengeId, challenge, challengeNumber, currentSmash]);
 
   const handleSubmit = () => {
     if (!currentSmash) return;
@@ -78,6 +84,15 @@ export default function Game() {
   const saveScore = useCallback(async () => {
     if (!isSignedIn || !clerkUserId || !challenge) return;
 
+    // For archive games, check if user already has a score for this challenge
+    if (archive && userScores) {
+      const existingScore = userScores.challengeScores[challenge._id];
+      if (existingScore !== undefined) {
+        setSaveMessage("Score already saved for this challenge.");
+        return;
+      }
+    }
+
     try {
       const result = await saveDailyScores({
         externalId: clerkUserId,
@@ -88,7 +103,7 @@ export default function Game() {
       if (result.status === "saved") {
         setSaveMessage("Score saved!");
       } else if (result.status === "already_saved") {
-        setSaveMessage("Score already saved for today.");
+        setSaveMessage("Score already saved for this challenge.");
       } else {
         setSaveMessage("Failed to save score.");
       }
@@ -96,7 +111,7 @@ export default function Game() {
       console.error("Error saving score:", error);
       setSaveMessage("Failed to save score.");
     }
-  }, [isSignedIn, clerkUserId, challenge, score, saveDailyScores]);
+  }, [isSignedIn, clerkUserId, challenge, score, saveDailyScores, archive, userScores]);
 
   useEffect(() => {
     if (gameState === "finished") {
@@ -128,10 +143,14 @@ export default function Game() {
 
   if (gameState === "finished") {
     const correctCount = score.filter(Boolean).length;
+    const existingScore = archive && userScores && challenge ? userScores.challengeScores[challenge._id] : undefined;
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <h1 className="text-3xl font-bold mb-4">Game Complete!</h1>
         <p className="text-xl mb-4">Score: {correctCount}/10</p>
+        {existingScore !== undefined && (
+          <p className="text-sm mb-2 text-base-content/60">Your previous score: {existingScore}/10</p>
+        )}
         <div className="flex gap-2 mb-4">
           {score.map((s, i) => (
             <div

@@ -1,177 +1,211 @@
 # SmashADay
 
-A daily word puzzle game where players combine two words into one creative "smash" based on clues. Play a new challenge every day!
+A daily word puzzle game where players combine two words into a single creative "smash" using two clues. A new challenge appears each day.
 
-## About the Game
+Quick links
 
-SmashADay is a word puzzle game that challenges players to find creative word combinations. Each day features a new puzzle with:
+- Code: [`package.json`](package.json:1)
+- Schema: [`convex/schema.ts`](convex/schema.ts:1)
+- App entry: [`src/App.tsx`](src/App.tsx:1)
+- Header component: [`src/components/Header.tsx`](src/components/Header.tsx:1)
 
-- **Two words** to combine
-- **Two clues** to guide you toward the answer
-- **One smash** - the creative combination of the two words
+Contents
 
-For example: "He's been Driving Home For Christmas every year since 1986" (Chris Rea) + "Web framework created by Meta" (React) = "Chris **Rea**ct"
+- About
+- Requirements
+- Install & run
+- Archive feature
+- Scripts
+- Project layout
+- How it works
+- Database schema
+- Development & tooling
+- Contributing
+- License
 
-## Features
+About
 
-- 🎮 **Daily Challenges** - A new puzzle every day with unique numbering
-- 🎯 **Hint System** - Two clues to help guide your answer
-- 🔄 **Word Matching** - Uses fuzzy matching to accept variations of correct answers
-- 📱 **Responsive Design** - Works seamlessly on desktop and mobile devices
-- 🔐 **User Authentication** - Secure login via Clerk
+SmashADay challenges players to identify a portmanteau ("smash") made from two source words or phrases using two clues.
 
-## Tech Stack
+Example:
 
-- **Frontend**: React 19 with Vite
-- **Backend**: Convex (serverless database & functions)
-- **Styling**: Tailwind CSS 4 + daisyUI 5
-- **Authentication**: Clerk
-- **Language**: TypeScript
+"Driving Home For Christmas" (Chris Rea) + "React (the web framework)" → Chris Rea + ct = "Chris React"
 
-## Getting Started
+Requirements
 
-### Prerequisites
-
-- Node.js (v18 or higher)
+- Node.js v18+
 - npm or pnpm
+- A Convex account to run the backend locally (optional: run `convex dev`)
 
-### Installation
+Install & run (local)
 
-1. Clone the repository:
+1. Clone the repo:
+
 ```bash
 git clone <repository-url>
 cd smashaday
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
-3. Set up environment variables:
-   - Create a `.env.local` file in the root directory
-   - Add your Clerk publishable key:
-     ```
-     VITE_CLERK_PUBLISHABLE_KEY=<your-key>
-     ```
+3. Create a local env file for frontend keys:
 
-4. Configure Clerk authentication in Convex:
-   - Follow the [Clerk setup guide](https://docs.convex.dev/auth/clerk#get-started)
-   - Add your Clerk Issuer URL as `CLERK_JWT_ISSUER_DOMAIN` in your Convex dashboard environment variables
+Create `.env.local` and add:
 
-### Running Locally
+```
+VITE_CLERK_PUBLISHABLE_KEY=<your-publishable-key>
+```
 
-Start the development server:
+4. Convex / Clerk integration:
+
+- In the Convex dashboard, set `CLERK_JWT_ISSUER_DOMAIN` to your Clerk issuer URL.
+
+Start dev
 
 ```bash
 npm run dev
 ```
 
-This command runs both the frontend (Vite) and backend (Convex) in parallel. The app will open automatically in your browser at `http://localhost:5173`.
+The `dev` script runs Vite and `convex dev` in parallel. Vite typically opens at http://localhost:5173.
 
-### Available Scripts
+Archive feature
 
-- `npm run dev` - Start frontend and backend in development mode
-- `npm run dev:frontend` - Start only the Vite frontend
-- `npm run dev:backend` - Start only the Convex backend
-- `npm run build` - Build for production
-- `npm run lint` - Run TypeScript and ESLint checks
-- `npm run preview` - Preview production build locally
+The app now includes an Archive page where signed-in users can browse past daily challenges and play them in-place.
 
-## Project Structure
+- Route: `#/archive` (client-side hash route) — added in [`src/App.tsx`](src/App.tsx:1)
+- Frontend: [`src/components/Archive.tsx`](src/components/Archive.tsx:1) — list view with pagination and responsive grid, opens archived challenge in-place using the Game component.
+- Game changes: [`src/components/Game.tsx`](src/components/Game.tsx:1) now accepts archive props to load a specific daily challenge by its canonical date (YYYY-MM-DD).
+- Header link: archive is accessible via the main header [`src/components/Header.tsx`](src/components/Header.tsx:1).
 
-```
-smashaday/
-├── convex/                 # Backend functions and schema
-│   ├── schema.ts          # Database schema (smashes, daily_challenges, wordsDb)
-│   ├── queries.ts         # Query functions
-│   ├── daily_challenge.ts # Daily challenge logic
-│   ├── generateWords.ts   # AI word generation for categories
-│   ├── insertWords.ts     # Word insertion mutations
-│   ├── crons.ts           # Scheduled tasks
-│   └── seed.ts            # Database seeding
-├── src/
-│   ├── components/        # React components
-│   │   ├── Game.tsx       # Main game component
-│   │   └── Header.tsx     # Header component
-│   ├── App.tsx            # Main app component
-│   ├── main.tsx           # Entry point
-│   └── index.css          # Global styles
-├── public/                # Static assets
-└── package.json           # Dependencies and scripts
-```
+Usage (as a user)
 
-## How It Works
+1. Visit the Archive at `#/archive`.
+2. If you are not signed in, you'll be prompted to Sign In or Sign Up. Archive browsing and play require authentication.
+3. Once signed in, the Archive shows up to 10 items per page with Next / Previous controls. Click an item to open it in the Game view and play the archived challenge.
+4. If you have a previously saved score for that challenge it will display as "Your score: N". If you complete the run and you had no prior score, your score will be saved via the existing mutation.
 
-1. **Daily Challenge Generation** - Each day, a new set of smashes is selected and stored in the `daily_challenges` table
-2. **Game Flow** - Players see two words and two clues, then attempt to guess the smash
-3. **Answer Validation** - Uses fuzzy string matching (Levenshtein distance) to accept reasonable variations
-4. **Persistence** - Challenge numbers increment daily, tracked by date
+Notes for maintainers
 
-## Database Schema
+- Dates in the database are canonical ISO strings in YYYY-MM-DD (see [`convex/schema.ts`](convex/schema.ts:1) — `daily_challenges.date`).
+- UI displays dates in British format (DD/MM/YYYY) using `toLocaleDateString('en-GB')` in [`src/components/Archive.tsx`](src/components/Archive.tsx:1) and the app homepage.
+- Scores are saved with the existing mutation: [`convex/saveDailyScores.ts`](convex/saveDailyScores.ts:1).
 
-### `smashes` Table
-- `word1` - First word to combine
-- `word2` - Second word to combine
-- `category1` - Category for first word
-- `category2` - Category for second word
-- `smash` - The correct answer (combined word)
-- `clue1` - Hint for first word
-- `clue2` - Hint for second word
+Backend APIs
 
-### `daily_challenges` Table
-- `date` - ISO date string (YYYY-MM-DD)
-- `dailySmashes` - Array of smash IDs for that day
+- `getDailyChallenges` — added to [`convex/queries.ts`](convex/queries.ts:1). It returns a paginated list of past challenges ordered newest-first. Response shape:
+  ```ts
+  { challenges: Array<{ id: string, date: string, challengeId?: string, title?: string }>, nextCursor?: string }
+  ```
+  Pagination uses Convex's cursor pagination; pass `limit` (max 10) and optional `cursor`.
 
-### `wordsDb` Table
-- `category` - Category name (indexed)
-- `words` - Record of word/phrase to boolean (false = unused, true = used)
+- `getUserScores` — added to [`convex/users.ts`](convex/users.ts:1). Given a Clerk user id it returns:
+  ```ts
+  { challengeScores: Record<string, number> }
+  ```
 
-## Development
+Frontend notes (developer)
 
-### Word Generation
+- The Archive list uses `getDailyChallenges` (limit=10) and manages a cursor stack to implement Previous / Next navigation. See [`src/components/Archive.tsx`](src/components/Archive.tsx:1).
+- When opening an archived challenge the Archive passes the canonical date string (YYYY-MM-DD) into the Game component via props (archive=true, archiveChallengeId=<YYYY-MM-DD>).
+- The Game component then queries [`convex/queries.getDailyChallengeByDate`](convex/queries.ts:1) to load the `daily_challenges` document for that date and renders the same gameplay UI as the live daily challenge.
+- Hook stability: Convex hooks are always called with either real arguments or `"skip"` to keep hook ordering stable.
 
-The game uses AI-generated word lists for categories stored in the `wordsDb` table. To populate empty categories with words:
+Accessibility & UX
 
-1. Set the `OPENROUTER_API_KEY` environment variable in your Convex dashboard
-2. Run the word generation action:
-   ```bash
-   npx convex run generateWords:generateWords
-   ```
+- Archive list items are keyboard-focusable and respond to Enter/Space to open.
+- Loading and error states are shown while fetching; auth prompts are clearly presented for unauthenticated users.
 
-This action will:
-- Find categories with empty word lists
-- Generate 15-25 words/phrases for each category using OpenAI's GPT-OSS-120B via OpenRouter
-- Store the results in the database with retry logic for failed generations
+Important scripts
 
-### Code Quality
+See [`package.json`](package.json:1) for the definitive list. Most-used commands:
 
-The project uses:
-- **TypeScript** for type safety
-- **ESLint** for code linting
-- **Prettier** for code formatting
+- `npm run dev` — frontend + backend in parallel
+- `npm run dev:frontend` — Vite only
+- `npm run dev:backend` — Convex dev only
+- `npm run build` — TypeScript build + Vite build
+- `npm run lint` — Type-check + ESLint
 
-Run linting:
+Project layout (short)
+
+- `convex/` — Convex schema, queries, mutations, crons (see [`convex/schema.ts`](convex/schema.ts:1))
+- `src/` — React app source (`src/App.tsx`, `src/components/`)
+- `src/components/Archive.tsx` — archive page (new)
+- `public/` — static assets
+
+How it works (high level)
+
+1. A daily challenge document is created in `daily_challenges` with a date and `dailySmashes` IDs.
+2. Clients query the day's smashes and render the two words with two clues.
+3. Players submit answers; acceptance uses fuzzy matching (Levenshtein distance) to allow reasonable variants.
+4. Scores and progress are stored in Convex tables keyed to users and challenges.
+
+Database schema (summary)
+
+See [`convex/schema.ts`](convex/schema.ts:1) for the full schema. Primary tables:
+
+- `smashes` — word1, word2, category1, category2, smash, clue1, clue2. Indexed by `smash` and `category1`.
+- `daily_challenges` — `date` (YYYY-MM-DD) and `dailySmashes` (array of smash ids).
+- `users` — user metadata, `externalId` stores Clerk id, `challengeScores` record.
+- `wordsDb` / `categories` — word pools used to generate smashes; clues and status stored on `wordsDb`.
+
+Development & tooling
+
+- TypeScript-first project. Run `npm run lint` to type-check and lint.
+- ESLint + Prettier configure formatting and lint rules.
+- Convex dev: run `convex dev` to run backend functions locally. Scheduled jobs live in [`convex/crons.ts`](convex/crons.ts:1).
+
+Word generation (AI)
+
+The repo contains Convex actions that generate words for categories using an LLM (see [`convex/generateWords.ts`](convex/generateWords.ts:1)).
+
+To run word generation:
+
+- Add `OPENROUTER_API_KEY` (or your LLM API key) to the Convex environment if required.
+- Run:
+
 ```bash
-npm run lint
+npx convex run generateWords:generateWords
 ```
 
-### Building for Production
+The action will:
 
-```bash
-npm run build
-```
+- Find categories that need words
+- Request batches of words/phrases from the configured LLM
+- Store results to `wordsDb` with retry/fallback logic
 
-This creates an optimized production build in the `dist/` directory.
+Notes & gotchas
 
-## Contributing
+- Authentication depends on Clerk. Ensure `VITE_CLERK_PUBLISHABLE_KEY` is set locally and Convex has the `CLERK_JWT_ISSUER_DOMAIN`.
+- Fuzzy matching uses `fastest-levenshtein` (see [`package.json`](package.json:1)).
+- Admin view is available via a hash route `#admin` in [`src/App.tsx`](src/App.tsx:1).
 
-Contributions are welcome! Please ensure:
-- Code passes linting checks (`npm run lint`)
-- TypeScript types are correct
-- Changes follow the existing code style
+Changelog - Archive feature
 
-## License
+- Added backend queries: [`convex/queries.ts`](convex/queries.ts:1) -> `getDailyChallenges`; [`convex/users.ts`](convex/users.ts:1) -> `getUserScores`.
+- Frontend: new archive page [`src/components/Archive.tsx`](src/components/Archive.tsx:1); Game updated [`src/components/Game.tsx`](src/components/Game.tsx:1); Header link [`src/components/Header.tsx`](src/components/Header.tsx:1); route wired in [`src/App.tsx`](src/App.tsx:1).
+- Pagination: cursor-based (Convex `paginate()`).
+- Dates: canonical storage YYYY-MM-DD; UI displays DD/MM/YYYY.
+- Score saving: uses existing mutation [`convex/saveDailyScores.ts`](convex/saveDailyScores.ts:1); frontend avoids duplicate saves when possible.
+- "Today's" challenge is hidden by default in archive as it's accessible from the front page.
 
-MIT license. The format is inspired by Answer Smash from Richard Osman's House of Games.
-This is a fan-created daily quiz implementation, free-to-play and entirely open source.
+Testing notes:
+
+- To test archive locally: run `npm run dev`, visit `http://localhost:5173/#/archive`, sign in with Clerk, navigate pages, open a challenge, complete run and verify score saved.
+
+Developer notes:
+
+- If you intend to add deep-links per challenge later, route convention could be `#/archive/YYYY-MM-DD`.
+
+Contributing
+
+- Open issues or PRs for bugs, docs, or features.
+- Ensure `npm run lint` passes and types compile.
+- Keep UI accessible and responsive; styling uses Tailwind + daisyUI.
+
+License
+
+MIT — fan-created puzzle inspired by Answer Smash (Richard Osman's House of Games).

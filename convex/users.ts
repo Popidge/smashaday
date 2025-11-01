@@ -85,3 +85,16 @@ export const isAdmin = query({
     return { isAdmin: true };
   },
 });
+
+export const getUserScores = query({
+  args: { clerkId: v.string() },
+  returns: v.object({
+    challengeScores: v.record(v.id("daily_challenges"), v.number()),
+  }),
+  handler: async (ctx, args) => {
+    const user = await userByExternalId(ctx, args.clerkId);
+    return {
+      challengeScores: user?.challengeScores || {},
+    };
+  },
+});

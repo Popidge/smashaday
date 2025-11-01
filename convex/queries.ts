@@ -57,3 +57,34 @@ export const getUniqueCategories = internalQuery({
     };
   },
 });
+
+export const getDailyChallenges = query({
+  args: {
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  returns: v.object({
+    challenges: v.array(v.object({
+      id: v.id("daily_challenges"),
+      date: v.string(),
+      challengeId: v.id("daily_challenges"),
+    })),
+    nextCursor: v.optional(v.string()),
+  }),
+  handler: async (ctx, args) => {
+    const limit = Math.min(args.limit || 10, 10);
+    const result = await ctx.db
+      .query("daily_challenges")
+      .withIndex("by_date")
+      .order("desc")
+      .paginate({ numItems: limit, cursor: args.cursor || null });
+    return {
+      challenges: result.page.map(c => ({
+        id: c._id,
+        date: c.date,
+        challengeId: c._id,
+      })),
+      nextCursor: result.isDone ? undefined : result.continueCursor,
+    };
+  },
+});
