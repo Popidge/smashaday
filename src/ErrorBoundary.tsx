@@ -38,6 +38,7 @@ export class ErrorBoundary extends Component<
                   className="underline hover:no-underline"
                   href={trimmedClerkDashboardUrl}
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   {trimmedClerkDashboardUrl}
                 </a>
