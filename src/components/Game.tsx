@@ -326,7 +326,16 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
               </p>
               <p className="text-base mb-3">
                 {currentSmash.word1} + {currentSmash.word2} ={" "}
-                <span dangerouslySetInnerHTML={{ __html: highlightPortmanteau(currentSmash.word1, currentSmash.word2, currentSmash.smash) }} />
+                {(() => {
+                  const { before, match, after } = highlightPortmanteau(currentSmash.word1, currentSmash.word2, currentSmash.smash);
+                  return (
+                    <>
+                      {before}
+                      {match && <mark>{match}</mark>}
+                      {after}
+                    </>
+                  );
+                })()}
               </p>
               <button onClick={handleNext} className="btn btn-primary motion-pop">
                 {currentIndex < 9 ? "Next" : "Finish"}
