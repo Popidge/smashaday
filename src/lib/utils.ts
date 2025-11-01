@@ -30,7 +30,7 @@ export function validateAnswer(userAnswer: string, correctAnswer: string): boole
 }
 
 // Highlight portmanteau in feedback
-export function highlightPortmanteau(word1: string, word2: string, smash: string): string {
+export function highlightPortmanteau(word1: string, word2: string, smash: string): { before: string; match: string | null; after: string } {
   const smashLower = smash.toLowerCase();
   const word1Lower = word1.toLowerCase();
   const word2Lower = word2.toLowerCase();
@@ -44,11 +44,15 @@ export function highlightPortmanteau(word1: string, word2: string, smash: string
   }
 
   if (overlap) {
-    const before = smashLower.indexOf(overlap);
-    const after = before + overlap.length;
-    return `${smash.slice(0, before)}<mark>${smash.slice(before, after)}</mark>${smash.slice(after)}`;
+    const beforeIndex = smashLower.indexOf(overlap);
+    const afterIndex = beforeIndex + overlap.length;
+    return {
+      before: smash.slice(0, beforeIndex),
+      match: smash.slice(beforeIndex, afterIndex),
+      after: smash.slice(afterIndex),
+    };
   }
 
-  return smash;
+  return { before: smash, match: null, after: '' };
 }
 
