@@ -15,6 +15,7 @@ import type * as daily_challenge from "../daily_challenge.js";
 import type * as generateWords from "../generateWords.js";
 import type * as http from "../http.js";
 import type * as insertWords from "../insertWords.js";
+import type * as manualTests_compilePendingTest from "../manualTests/compilePendingTest.js";
 import type * as migrateUserScores from "../migrateUserScores.js";
 import type * as migrateWords from "../migrateWords.js";
 import type * as queries from "../queries.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   generateWords: typeof generateWords;
   http: typeof http;
   insertWords: typeof insertWords;
+  "manualTests/compilePendingTest": typeof manualTests_compilePendingTest;
   migrateUserScores: typeof migrateUserScores;
   migrateWords: typeof migrateWords;
   queries: typeof queries;

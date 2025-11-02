@@ -149,10 +149,12 @@ export const smashCompilerPage = internalMutation({
           } else {
             // Update pending smash with any new clue data, keep status as "compiled"
             const patch: any = {};
-            if (word1Data.clue !== word1Data.clue) patch.clue1 = word1Data.clue; // Note: this check is redundant since we're comparing to itself
-            if (word2Data.clue !== word2Data.clue) patch.clue2 = word2Data.clue; // This will never be true
-            // Actually, we should compare to the current pending smash clues if we stored them, but we don't
-            // For now, skip this optimization as it's not critical
+            if (pending.clue1 !== word1Data.clue) patch.clue1 = word1Data.clue;
+            if (pending.clue2 !== word2Data.clue) patch.clue2 = word2Data.clue;
+            if (Object.keys(patch).length > 0) {
+              await ctx.db.patch(pending._id, patch);
+              console.log(`Updated pending smash clues: ${pending.word1} + ${pending.word2}`);
+            }
           }
         }
       } catch (error) {
