@@ -53,6 +53,8 @@ export default defineSchema({
     word2: v.string(),
     category2: v.string(),
     smash: v.string(),
+    clue1: v.optional(v.string()),
+    clue2: v.optional(v.string()),
     status: v.union(
       v.literal("pending"),
       v.literal("compiled"),
