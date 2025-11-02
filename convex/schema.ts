@@ -12,7 +12,10 @@ export default defineSchema({
     clue2: v.string(),
   })
   .index("by_smash", ["smash"])
-  .index("by_category1", ["category1"]),
+  .index("by_category1", ["category1"])
+  .index("by_category2", ["category2"])
+  .index("by_word1", ["word1"])
+  .index("by_word2", ["word2"]),
 
   daily_challenges: defineTable({
     date: v.string(),
