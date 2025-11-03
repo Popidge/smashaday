@@ -26,19 +26,27 @@ export const saveDailyScores = mutation({
         };
       }
 
-      // Check if score for this challenge already exists
-      if (user.challengeScores[args.challengeId] !== undefined) {
+      // Check if score for this challenge already exists in user_scores
+      const existing = await ctx.db
+        .query("user_scores")
+        .withIndex("by_user_challenge", (q) =>
+          q.eq("userId", user._id).eq("challengeId", args.challengeId)
+        )
+        .unique();
+
+      if (existing) {
         return {
           status: "already_saved" as const,
           message: "Score already saved for this challenge",
         };
       }
 
-      // Add new score to the record
-      const updatedScores = { ...user.challengeScores, [args.challengeId]: args.score };
-
-      // Update the user
-      await ctx.db.patch(user._id, { challengeScores: updatedScores });
+      // Insert new score into user_scores
+      await ctx.db.insert("user_scores", {
+        userId: user._id,
+        challengeId: args.challengeId,
+        score: args.score,
+      });
 
       return {
         status: "saved" as const,
