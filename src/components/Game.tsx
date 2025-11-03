@@ -6,6 +6,7 @@ import { api } from "../../convex/_generated/api";
 import { validateAnswer, titleCase, highlightPortmanteau } from "../lib/utils";
 import { cn } from "../lib/utils";
 import { useAuth } from "@clerk/clerk-react";
+import StreakStats from "./StreakStats";
 
 type GameState = "loading" | "playing" | "feedback" | "finished";
 
@@ -197,6 +198,14 @@ export default function Game({ archive = false, archiveChallengeId }: { archive?
         {saveMessage && (
           <p className="text-sm mb-4 text-center">{saveMessage}</p>
         )}
+
+        {/* Show streak stats for current daily games */}
+        {isSignedIn && !archive && (
+          <div className="mb-4">
+            <StreakStats showPercentile showPersonalBest />
+          </div>
+        )}
+
         <button onClick={() => void copyShareSummary()} className="btn btn-primary mb-4">
           Copy Share Summary
         </button>

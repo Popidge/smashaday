@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const saveDailyScores = mutation({
   args: {
@@ -41,12 +42,34 @@ export const saveDailyScores = mutation({
         };
       }
 
+      // Fetch challenge to determine if it's current daily
+      const challenge = await ctx.db.get(args.challengeId);
+      if (!challenge) {
+        return {
+          status: "error" as const,
+          message: "Challenge not found",
+        };
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const isCurrentDaily = challenge.date === today;
+
       // Insert new score into user_scores
       await ctx.db.insert("user_scores", {
         userId: user._id,
         challengeId: args.challengeId,
         score: args.score,
+        isCurrentDaily,
+        playedAt: Date.now(),
       });
+
+      // Update streak if this is a current daily challenge
+      if (isCurrentDaily) {
+        await ctx.runMutation(internal.streaks.updateUserStreak, {
+          externalId: args.externalId,
+          challengeId: args.challengeId,
+        });
+      }
 
       return {
         status: "saved" as const,

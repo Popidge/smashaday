@@ -133,6 +133,11 @@ export default function Header() {
             Archive
           </a>
 
+          {/* Stats link */}
+          <a href="#stats" className="btn btn-ghost btn-sm" aria-label="Go to Stats">
+            Stats
+          </a>
+
           {/* Admin button only shown in header on md+ (mobile gets it in the menu) */}
           <div className="hidden md:block">
             <AdminButton className="btn-sm" />
@@ -196,6 +201,14 @@ export default function Header() {
                     aria-label="Archive"
                   >
                     Archive
+                  </a>
+                  <a
+                    href="#stats"
+                    className="btn btn-ghost justify-start w-full text-left"
+                    onClick={() => setMenuOpen(false)}
+                    aria-label="Stats"
+                  >
+                    Stats
                   </a>
                   <AdminButton
                     className="btn-ghost justify-start w-full text-left"
