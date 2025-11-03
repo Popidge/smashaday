@@ -26,7 +26,7 @@ async function fetchMostRecentChallenges(ctx: any, limit: number) {
 }
 
 // Helper function to build avoid sets
-async function buildAvoidSets(ctx: any, recentChallenges: any[], w: number, c: number) {
+async function buildAvoidSets(ctx: any, recentChallenges: any[], c: number) {
   const wordsToAvoid = new Set<string>();
   const categoriesToAvoid = new Set<string>();
 
@@ -81,8 +81,8 @@ export const generateDailyChallenge = internalMutation({
 
     // Stage 1: Collect previous w daily challenges, build sets of wordsToAvoid (last w days) and categoriesToAvoid (last c days)
     const mostRecentW = await fetchMostRecentChallenges(ctx, w);
-
-    const { wordsToAvoid, categoriesToAvoid } = await buildAvoidSets(ctx, mostRecentW, w, c);
+ 
+    const { wordsToAvoid, categoriesToAvoid } = await buildAvoidSets(ctx, mostRecentW, c);
 
     // Debug logs: these arrays can be large; consider making conditional on a verbosity flag in production
     devLog(`wordsToAvoid (${wordsToAvoid.size}):`, Array.from(wordsToAvoid));
