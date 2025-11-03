@@ -19,10 +19,10 @@ export const upsertFromClerk = internalMutation({
 
     const user = await userByExternalId(ctx, data.id);
     if (user === null) {
-      // New user: create with empty challengeScores record
-      await ctx.db.insert("users", { ...userAttrs, challengeScores: {} });
+      // New user
+      await ctx.db.insert("users", userAttrs);
     } else {
-      // Existing user: only patch non-score fields so we don't overwrite saved scores
+      // Existing user: only patch non-score fields
       await ctx.db.patch(user._id, userAttrs);
     }
   },
@@ -40,16 +40,6 @@ export const deleteFromClerk = internalMutation({
         `Can't delete user, there is none for Clerk user ID: ${clerkUserId}`,
       );
     }
-  },
-});
-
-export const updateChallengeScores = internalMutation({
-  args: {
-    userId: v.id("users"),
-    challengeScores: v.record(v.id("daily_challenges"), v.number()),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.userId, { challengeScores: args.challengeScores });
   },
 });
 
@@ -93,8 +83,20 @@ export const getUserScores = query({
   }),
   handler: async (ctx, args) => {
     const user = await userByExternalId(ctx, args.clerkId);
-    return {
-      challengeScores: user?.challengeScores || {},
-    };
+    if (!user) {
+      return { challengeScores: {} };
+    }
+
+    const scores = await ctx.db
+      .query("user_scores")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const challengeScores: Record<string, number> = {};
+    for (const score of scores) {
+      challengeScores[score.challengeId] = score.score;
+    }
+
+    return { challengeScores };
   },
 });

@@ -26,7 +26,8 @@ export default defineSchema({
     name: v.string(),
     // this the Clerk ID, stored in the subject JWT field
     externalId: v.string(),
-    challengeScores: v.record(v.id("daily_challenges"), v.number()),
+    // TODO - Remove after PR #10 is merged and migrations run in prod
+    challengeScores: v.optional(v.record(v.id("daily_challenges"), v.number())),
   }).index("byExternalId", ["externalId"]),
 
   categories: defineTable({
@@ -63,6 +64,16 @@ export default defineSchema({
       v.literal("compiled"),
       v.literal("failed")
     )
-  }).index("by_status", ["status"])
+  }).index("by_status", ["status"]),
+
+  user_scores: defineTable({
+  userId: v.id("users"),
+  challengeId: v.id("daily_challenges"),
+  score: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_challenge", ["challengeId"])
+    //TODO - add { unique: true } to below index once migrations from PR #10 have been run
+    .index("by_user_challenge", ["userId", "challengeId"])
 
 })
