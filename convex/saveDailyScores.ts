@@ -26,30 +26,32 @@ export const saveDailyScores = mutation({
         };
       }
 
-      // Attempt to insert the score directly - the unique constraint will prevent duplicates
-      try {
-        await ctx.db.insert("user_scores", {
-          userId: user._id,
-          challengeId: args.challengeId,
-          score: args.score,
-        });
+      // Check if score for this challenge already exists using the by_user_challenge index
+      const existing = await ctx.db
+        .query("user_scores")
+        .withIndex("by_user_challenge", (q) =>
+          q.eq("userId", user._id).eq("challengeId", args.challengeId)
+        )
+        .first();
 
+      if (existing) {
         return {
-          status: "saved" as const,
-          message: "Score saved successfully",
+          status: "already_saved" as const,
+          message: "Score already saved for this challenge",
         };
-      } catch (error: any) {
-        // Check if this is a unique constraint violation
-        if (error.message && error.message.includes("unique")) {
-          return {
-            status: "already_saved" as const,
-            message: "Score already saved for this challenge",
-          };
-        }
-
-        // Re-throw other unexpected errors
-        throw error;
       }
+
+      // Insert new score into user_scores
+      await ctx.db.insert("user_scores", {
+        userId: user._id,
+        challengeId: args.challengeId,
+        score: args.score,
+      });
+
+      return {
+        status: "saved" as const,
+        message: "Score saved successfully",
+      };
     } catch (error) {
       console.error("Error saving daily score:", error);
       return {
