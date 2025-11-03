@@ -1,10 +1,10 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import OpenAI from "openai";
 import { tavily } from "@tavily/core";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 /**
  * Simple semaphore for controlling concurrency
@@ -251,9 +251,9 @@ async function processWordForClue(
 }
 
 /**
- * Main action to generate clues for words in pending smashes
+ * Internal action to generate clues for words in pending smashes
  */
-export const generateClues = action({
+export const generateCluesInternal = internalAction({
   args: {
     dryRun: v.optional(v.boolean()),
   },
@@ -322,5 +322,32 @@ export const generateClues = action({
 
     console.log(`Clue generation complete: ${stats.succeeded} succeeded, ${stats.failed} failed, ${stats.skipped} skipped`);
     return stats;
+  },
+});
+
+/**
+ * Public action to generate clues for words in pending smashes (admin-gated)
+ */
+export const generateClues = action({
+  args: {
+    dryRun: v.optional(v.boolean()),
+  },
+  returns: v.object({
+    succeeded: v.number(),
+    failed: v.number(),
+    skipped: v.number(),
+    total: v.number(),
+  }),
+  handler: async (ctx, args): Promise<{
+    succeeded: number;
+    failed: number;
+    skipped: number;
+    total: number;
+  }> => {
+    const isAdminResult = await ctx.runQuery(api.users.isAdmin, {});
+    if (!isAdminResult.isAdmin) {
+      throw new Error("Unauthorized: Admin access required");
+    }
+    return await ctx.runAction(internal.clueGen.generateCluesInternal, args);
   },
 });

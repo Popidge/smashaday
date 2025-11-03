@@ -1,9 +1,9 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import OpenAI from "openai";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 
 /**
  * Sanitizes a word/phrase to be a valid Convex record key.
@@ -45,7 +45,7 @@ function sanitizeWordKey(word: string): string {
   return sanitized;
 }
 
-export const generateWords = action({
+export const generateWordsInternal = internalAction({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
@@ -148,6 +148,19 @@ Return ONLY this format:
       }
     }
 
+    return null;
+  },
+});
+
+export const generateWords = action({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    const isAdminResult = await ctx.runQuery(api.users.isAdmin, {});
+    if (!isAdminResult.isAdmin) {
+      throw new Error("Unauthorized: Admin access required");
+    }
+    await ctx.runAction(internal.generateWords.generateWordsInternal, {});
     return null;
   },
 });
