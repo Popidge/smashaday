@@ -162,7 +162,12 @@ export const generateDailyChallenge = internalMutation({
     if (workingArray.length < 10) {
       // discount category 2 filters - filter filterDocs to remove c2Smashes, to give filterDocsC2
       const filterDocsC2 = new Set(filterDocs);
-      for (const id of c2Smashes) filterDocsC2.delete(id);
+      // Only remove IDs that are exclusively excluded by category2 (not by any other active constraint)
+      for (const id of c2Smashes) {
+        if (!c1Smashes.has(id) && !w1Smashes.has(id) && !w2Smashes.has(id)) {
+          filterDocsC2.delete(id);
+        }
+      }
 
       // filter allSmashes to remove filterDocsC2 and working array to give filteredSmashesC2
       const filteredSmashesC2 = allSmashes.filter(smash => !filterDocsC2.has(smash._id) && !workingArray.includes(smash._id));
@@ -174,7 +179,12 @@ export const generateDailyChallenge = internalMutation({
       } else {
         // repeat discounting category1 filters, then word2 filters, then word1 filters
         const filterDocsC1 = new Set(filterDocsC2);
-        for (const id of c1Smashes) filterDocsC1.delete(id);
+        // Only remove IDs that are exclusively excluded by category1 (not by any word constraints)
+        for (const id of c1Smashes) {
+          if (!w1Smashes.has(id) && !w2Smashes.has(id)) {
+            filterDocsC1.delete(id);
+          }
+        }
         const filteredSmashesC1 = allSmashes.filter(smash => !filterDocsC1.has(smash._id) && !workingArray.includes(smash._id));
 
         if (filteredSmashesC1.length > (10 - workingArray.length)) {
@@ -182,7 +192,12 @@ export const generateDailyChallenge = internalMutation({
           workingArray.push(...shuffled.slice(0, 10 - workingArray.length).map(s => s._id));
         } else {
           const filterDocsW2 = new Set(filterDocsC1);
-          for (const id of w2Smashes) filterDocsW2.delete(id);
+          // Only remove IDs that are exclusively excluded by word2 (not by word1)
+          for (const id of w2Smashes) {
+            if (!w1Smashes.has(id)) {
+              filterDocsW2.delete(id);
+            }
+          }
           const filteredSmashesW2 = allSmashes.filter(smash => !filterDocsW2.has(smash._id) && !workingArray.includes(smash._id));
 
           if (filteredSmashesW2.length > (10 - workingArray.length)) {
