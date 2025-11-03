@@ -25,12 +25,12 @@ async function fetchMostRecentChallenges(ctx: any, limit: number) {
     .take(limit);
 }
 
-// Helper function to build avoid sets
+ // Helper function to build avoid sets
 async function buildAvoidSets(ctx: any, recentChallenges: any[], c: number) {
   const wordsToAvoid = new Set<string>();
   const categoriesToAvoid = new Set<string>();
 
-  // Collect all smash IDs from recent w days
+  // Collect all smash IDs from recent days
   const allSmashIds: Id<"smashes">[] = [];
   for (const challenge of recentChallenges) {
     allSmashIds.push(...challenge.dailySmashes);
@@ -39,11 +39,17 @@ async function buildAvoidSets(ctx: any, recentChallenges: any[], c: number) {
   // Fetch all smashes in parallel
   const recentSmashes = await Promise.all(allSmashIds.map(id => ctx.db.get(id)));
 
-  // Build sets from fetched smashes
+  // Build a map for O(1) lookup by _id to avoid O(n^2) .find(...) calls
+  const recentSmashMap = new Map<string, any>();
+  for (const s of recentSmashes) {
+    if (s && s._id) recentSmashMap.set(s._id, s);
+  }
+
+  // Build sets from fetched smashes using the map
   for (let i = 0; i < recentChallenges.length; i++) {
     const challenge = recentChallenges[i];
     for (const smashId of challenge.dailySmashes) {
-      const smash = recentSmashes.find((s: any) => s?._id === smashId);
+      const smash = recentSmashMap.get(smashId);
       if (smash) {
         wordsToAvoid.add(smash.word1);
         wordsToAvoid.add(smash.word2);
