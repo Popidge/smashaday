@@ -1,6 +1,7 @@
-import { action, internalMutation } from "./_generated/server";
+import { action, internalMutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 export const insertUserScore = internalMutation({
   args: {
@@ -14,7 +15,7 @@ export const insertUserScore = internalMutation({
   },
 });
 
-export const checkUserScoreExists = internalMutation({
+export const checkUserScoreExists = internalQuery({
   args: {
     userId: v.id("users"),
     challengeId: v.id("daily_challenges"),
@@ -26,7 +27,7 @@ export const checkUserScoreExists = internalMutation({
       .withIndex("by_user_challenge", (q) =>
         q.eq("userId", args.userId).eq("challengeId", args.challengeId)
       )
-      .unique();
+      .first();
     return existing !== null;
   },
 });
@@ -51,9 +52,9 @@ export const migrateUserScores = action({
         // Iterate over the challengeScores record
         for (const [challengeId, score] of Object.entries(user.challengeScores || {})) {
           // Check if already exists in user_scores
-          const exists = await ctx.runMutation(internal.migrateUserScores.checkUserScoreExists, {
+          const exists = await ctx.runQuery(internal.migrateUserScores.checkUserScoreExists, {
             userId: user._id,
-            challengeId: challengeId as any,
+            challengeId: challengeId as Id<"daily_challenges">,
           });
 
           if (exists) {
@@ -64,7 +65,7 @@ export const migrateUserScores = action({
           // Insert new row
           await ctx.runMutation(internal.migrateUserScores.insertUserScore, {
             userId: user._id,
-            challengeId: challengeId as any,
+            challengeId: challengeId as Id<"daily_challenges">,
             score,
           });
 
@@ -119,5 +120,77 @@ export const clearUserChallengeScores = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.patch(args.userId, { challengeScores: undefined });
+  },
+});
+
+export const deduplicateUserScores = action({
+  args: {},
+  returns: v.object({
+    duplicatesRemoved: v.number(),
+    errors: v.number(),
+  }),
+  handler: async (ctx) => {
+    let duplicatesRemoved = 0;
+    let errors = 0;
+
+    // Get all user_scores grouped by userId and challengeId
+    const allScores = await ctx.runQuery(internal.migrateUserScores.getAllUserScores, {});
+
+    // Group by userId + challengeId
+    const grouped = new Map<string, any[]>();
+    for (const score of allScores) {
+      const key = `${score.userId}-${score.challengeId}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(score);
+    }
+
+    // For each group with duplicates, keep the first one and delete the rest
+    for (const [, scores] of grouped) {
+      if (scores.length > 1) {
+        // Sort by creation time, keep the earliest
+        scores.sort((a, b) => a._creationTime - b._creationTime);
+        const toDelete = scores.slice(1); // All except the first
+
+        for (const duplicate of toDelete) {
+          try {
+            await ctx.runMutation(internal.migrateUserScores.deleteUserScore, {
+              scoreId: duplicate._id,
+            });
+            duplicatesRemoved++;
+          } catch (error) {
+            console.error(`Error deleting duplicate score ${duplicate._id}:`, error);
+            errors++;
+          }
+        }
+      }
+    }
+
+    return { duplicatesRemoved, errors };
+  },
+});
+
+export const getAllUserScores = internalQuery({
+  args: {},
+  returns: v.array(v.object({
+    _id: v.id("user_scores"),
+    _creationTime: v.number(),
+    userId: v.id("users"),
+    challengeId: v.id("daily_challenges"),
+    score: v.number(),
+  })),
+  handler: async (ctx) => {
+    return await ctx.db.query("user_scores").collect();
+  },
+});
+
+export const deleteUserScore = internalMutation({
+  args: {
+    scoreId: v.id("user_scores"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.scoreId);
   },
 });

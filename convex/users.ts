@@ -43,16 +43,6 @@ export const deleteFromClerk = internalMutation({
   },
 });
 
-export const updateChallengeScores = internalMutation({
-  args: {
-    userId: v.id("users"),
-    challengeScores: v.record(v.id("daily_challenges"), v.number()),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.userId, { challengeScores: args.challengeScores });
-  },
-});
-
 export async function getCurrentUserOrThrow(ctx: QueryCtx) {
   const userRecord = await getCurrentUser(ctx);
   if (!userRecord) throw new Error("Can't get current user");

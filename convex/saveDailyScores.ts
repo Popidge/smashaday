@@ -32,7 +32,7 @@ export const saveDailyScores = mutation({
         .withIndex("by_user_challenge", (q) =>
           q.eq("userId", user._id).eq("challengeId", args.challengeId)
         )
-        .unique();
+        .first();
 
       if (existing) {
         return {
