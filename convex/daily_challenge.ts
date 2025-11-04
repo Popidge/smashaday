@@ -145,157 +145,114 @@ export const generateDailyChallenge = internalMutation({
 
     devLog(`Filtered smashes after full constraints: ${filteredSmashes.length}`); // Debug log
 
-    // Use the full filtered pool for deduping selection rather than pre-slicing to 10.
-    // Previously we limited to 10 here, which meant intra-day dedupe often rejected many
-    // because the small sample already had category/word collisions.  We now keep the
-    // entire filtered pool and greedily pick up to 10 unique items from it.
-    const workingArray: Id<"smashes">[] = filteredSmashes.map(s => s._id);
-    if (workingArray.length >= 10) {
-      devLog(`Working pool after stage 2: ${workingArray.length} candidates (using full pool for dedupe)`); // Debug log
-    } else {
-      // If filteredSmashes < 10, we'll enter Stage 3 to relax constraints
-      devLog(`Working array after stage 2: ${workingArray.length}`); // Debug log
+    // Helper function to select unique smashes from a pool, respecting intra-day deduping
+    function selectUniqueSmashes(
+      smashIds: Id<"smashes">[],
+      smashById: Map<Id<"smashes">, any>,
+      usedWords: Set<string>,
+      usedCategories: Set<string>,
+      maxToSelect: number
+    ): Id<"smashes">[] {
+      const selected: Id<"smashes">[] = [];
+      const shuffled = [...smashIds].sort(() => Math.random() - 0.5);
+
+      for (const id of shuffled) {
+        const smash = smashById.get(id);
+        if (!smash) continue;
+
+        // Check intra-day word deduping (highest priority)
+        if (usedWords.has(smash.word1) || usedWords.has(smash.word2)) continue;
+
+        // Check intra-day category deduping
+        if (usedCategories.has(smash.category1) || usedCategories.has(smash.category2)) continue;
+
+        // All checks passed, add to selection
+        selected.push(id);
+        usedWords.add(smash.word1);
+        usedWords.add(smash.word2);
+        usedCategories.add(smash.category1);
+        usedCategories.add(smash.category2);
+
+        if (selected.length >= maxToSelect) break;
+      }
+
+      return selected;
     }
 
+    // Build smashById for lookup
+    const smashById = new Map(allSmashes.map(s => [s._id, s]));
 
-    // Stage 3: backfill with gradually relaxed filter constraints
-    if (workingArray.length < 10) {
-      // discount category 2 filters - filter filterDocs to remove c2Smashes, to give filterDocsC2
+    // Initialize sets for intra-day deduping
+    const challengeUsedWords = new Set<string>();
+    const challengeUsedCategories = new Set<string>();
+    const dailySmashes: Id<"smashes">[] = [];
+
+    devLog(`Filtered smashes after full constraints: ${filteredSmashes.length}`); // Debug log
+
+    // Stage 2: Select from fully constrained pool first
+    const initialPool = filteredSmashes.map(s => s._id);
+    const initialSelected = selectUniqueSmashes(initialPool, smashById, challengeUsedWords, challengeUsedCategories, 10);
+    dailySmashes.push(...initialSelected);
+
+    devLog(`Selected ${initialSelected.length} from initial pool. Total selected: ${dailySmashes.length}`);
+
+    // Stage 3: If needed, relax constraints iteratively and select more
+    if (dailySmashes.length < 10) {
+      // Relax category2 filters
       const filterDocsC2 = new Set(filterDocs);
-      // Only remove IDs that are exclusively excluded by category2 (not by any other active constraint)
       for (const id of c2Smashes) {
         if (!c1Smashes.has(id) && !w1Smashes.has(id) && !w2Smashes.has(id)) {
           filterDocsC2.delete(id);
         }
       }
+      const availableC2 = allSmashes.filter(smash => !filterDocsC2.has(smash._id) && !dailySmashes.includes(smash._id));
+      const selectedC2 = selectUniqueSmashes(availableC2.map(s => s._id), smashById, challengeUsedWords, challengeUsedCategories, 10 - dailySmashes.length);
+      dailySmashes.push(...selectedC2);
+      devLog(`Selected ${selectedC2.length} after relaxing C2. Total selected: ${dailySmashes.length}`);
 
-      // filter allSmashes to remove filterDocsC2 and working array to give filteredSmashesC2
-      const filteredSmashesC2 = allSmashes.filter(smash => !filterDocsC2.has(smash._id) && !workingArray.includes(smash._id));
-
-      if (filteredSmashesC2.length > (10 - workingArray.length)) {
-        // take all, break
-        const shuffled = [...filteredSmashesC2].sort(() => Math.random() - 0.5);
-        workingArray.push(...shuffled.slice(0, 10 - workingArray.length).map(s => s._id));
-      } else {
-        // repeat discounting category1 filters, then word2 filters, then word1 filters
+      if (dailySmashes.length < 10) {
+        // Relax category1 filters
         const filterDocsC1 = new Set(filterDocsC2);
-        // Only remove IDs that are exclusively excluded by category1 (not by any word constraints)
         for (const id of c1Smashes) {
           if (!w1Smashes.has(id) && !w2Smashes.has(id)) {
             filterDocsC1.delete(id);
           }
         }
-        const filteredSmashesC1 = allSmashes.filter(smash => !filterDocsC1.has(smash._id) && !workingArray.includes(smash._id));
+        const availableC1 = allSmashes.filter(smash => !filterDocsC1.has(smash._id) && !dailySmashes.includes(smash._id));
+        const selectedC1 = selectUniqueSmashes(availableC1.map(s => s._id), smashById, challengeUsedWords, challengeUsedCategories, 10 - dailySmashes.length);
+        dailySmashes.push(...selectedC1);
+        devLog(`Selected ${selectedC1.length} after relaxing C1. Total selected: ${dailySmashes.length}`);
 
-        if (filteredSmashesC1.length > (10 - workingArray.length)) {
-          const shuffled = [...filteredSmashesC1].sort(() => Math.random() - 0.5);
-          workingArray.push(...shuffled.slice(0, 10 - workingArray.length).map(s => s._id));
-        } else {
+        if (dailySmashes.length < 10) {
+          // Relax word2 filters
           const filterDocsW2 = new Set(filterDocsC1);
-          // Only remove IDs that are exclusively excluded by word2 (not by word1)
           for (const id of w2Smashes) {
             if (!w1Smashes.has(id)) {
               filterDocsW2.delete(id);
             }
           }
-          const filteredSmashesW2 = allSmashes.filter(smash => !filterDocsW2.has(smash._id) && !workingArray.includes(smash._id));
+          const availableW2 = allSmashes.filter(smash => !filterDocsW2.has(smash._id) && !dailySmashes.includes(smash._id));
+          const selectedW2 = selectUniqueSmashes(availableW2.map(s => s._id), smashById, challengeUsedWords, challengeUsedCategories, 10 - dailySmashes.length);
+          dailySmashes.push(...selectedW2);
+          devLog(`Selected ${selectedW2.length} after relaxing W2. Total selected: ${dailySmashes.length}`);
 
-          if (filteredSmashesW2.length > (10 - workingArray.length)) {
-            const shuffled = [...filteredSmashesW2].sort(() => Math.random() - 0.5);
-            workingArray.push(...shuffled.slice(0, 10 - workingArray.length).map(s => s._id));
-          } else {
+          if (dailySmashes.length < 10) {
+            // Relax word1 filters
             const filterDocsW1 = new Set(filterDocsW2);
             for (const id of w1Smashes) filterDocsW1.delete(id);
-            const filteredSmashesW1 = allSmashes.filter(smash => !filterDocsW1.has(smash._id) && !workingArray.includes(smash._id));
+            const availableW1 = allSmashes.filter(smash => !filterDocsW1.has(smash._id) && !dailySmashes.includes(smash._id));
+            const selectedW1 = selectUniqueSmashes(availableW1.map(s => s._id), smashById, challengeUsedWords, challengeUsedCategories, 10 - dailySmashes.length);
+            dailySmashes.push(...selectedW1);
+            devLog(`Selected ${selectedW1.length} after relaxing W1. Total selected: ${dailySmashes.length}`);
 
-            if (filteredSmashesW1.length > (10 - workingArray.length)) {
-              const shuffled = [...filteredSmashesW1].sort(() => Math.random() - 0.5);
-              workingArray.push(...shuffled.slice(0, 10 - workingArray.length).map(s => s._id));
-            } else {
-              // defensive fallback (should never be triggered) - gracefully handle/log if we get through whole algo and still <10 smashes
-              console.error(`Unable to find 10 smashes even after relaxing all constraints. Found ${workingArray.length + filteredSmashesW1.length} total.`);
-              if (workingArray.length + filteredSmashesW1.length >= 10) {
-                const shuffled = [...filteredSmashesW1].sort(() => Math.random() - 0.5);
-                workingArray.push(...shuffled.slice(0, 10 - workingArray.length).map(s => s._id));
-              } else {
-                throw new Error(`Could not generate 10 unique smashes. Only found ${workingArray.length + filteredSmashesW1.length}`);
-              }
+            if (dailySmashes.length < 10) {
+              // Defensive fallback
+              console.error(`Unable to find 10 smashes even after relaxing all constraints. Found ${dailySmashes.length} selected.`);
+              throw new Error(`Could not generate 10 unique smashes. Only found ${dailySmashes.length}`);
             }
           }
         }
       }
-    }
-
-    // Now apply intra-day deduping to the working array
-    const dailySmashes: Id<"smashes">[] = [];
-    const challengeUsedWords = new Set<string>();
-    const challengeUsedCategories = new Set<string>();
-
-    // Build smashById for lookup
-    const smashById = new Map(allSmashes.map(s => [s._id, s]));
-
-    // Debug: sample filteredSmashes and workingArray to diagnose deduping issues
-    try {
-      devLog("DEBUG: sample filteredSmashes (first 10):", filteredSmashes.slice(0, 10).map(s => ({
-        _id: s._id,
-        word1: s.word1,
-        word2: s.word2,
-        category1: s.category1,
-        category2: s.category2,
-      })));
-    } catch (e) {
-      devLog("DEBUG: failed to log filteredSmashes sample", e);
-    }
-    devLog("DEBUG: workingArray length", workingArray.length, "sample ids", workingArray.slice(0, 10));
-    devLog("DEBUG: smashById size", smashById.size);
-
-    // Shuffle working array for randomness
-    const shuffledWorking = [...workingArray].sort(() => Math.random() - 0.5);
-
-    // Counters for diagnostics
-    let skipMissing = 0;
-    let skipWordDup = 0;
-    let skipCategoryDup = 0;
-    let accepted = 0;
-
-    for (const smashId of shuffledWorking) {
-      const smash = smashById.get(smashId);
-      if (!smash) {
-        skipMissing++;
-        devLog("DEBUG SKIP: missing smash in smashById", smashId);
-        continue;
-      }
-
-      // Check intra-day word deduping (highest priority)
-      if (challengeUsedWords.has(smash.word1) || challengeUsedWords.has(smash.word2)) {
-        skipWordDup++;
-        devLog("DEBUG SKIP word-dup:", smash._id, { word1: smash.word1, word2: smash.word2, usedWords: Array.from(challengeUsedWords).slice(0,10) });
-        continue;
-      }
-      // Check intra-day category deduping
-      if (challengeUsedCategories.has(smash.category1) || challengeUsedCategories.has(smash.category2)) {
-        skipCategoryDup++;
-        devLog("DEBUG SKIP category-dup:", smash._id, { category1: smash.category1, category2: smash.category2, usedCategories: Array.from(challengeUsedCategories).slice(0,10) });
-        continue;
-      }
-
-      // All checks passed, add to daily challenge
-      dailySmashes.push(smash._id);
-      accepted++;
-      challengeUsedWords.add(smash.word1);
-      challengeUsedWords.add(smash.word2);
-      challengeUsedCategories.add(smash.category1);
-      challengeUsedCategories.add(smash.category2);
-
-      devLog("DEBUG ACCEPT:", smash._id, { word1: smash.word1, word2: smash.word2, category1: smash.category1, category2: smash.category2, totalSelected: dailySmashes.length });
-
-      if (dailySmashes.length >= 10) break;
-    }
-
-    devLog("DEBUG DEDUPE STATS:", { accepted, skipMissing, skipWordDup, skipCategoryDup, workingPool: workingArray.length });
-
-    if (dailySmashes.length < 10) {
-      throw new Error(`Could not generate 10 unique smashes after deduping. Only found ${dailySmashes.length}`);
     }
 
     devLog(`Final daily challenge: ${dailySmashes.length} smashes selected`); // Debug log
