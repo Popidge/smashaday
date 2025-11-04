@@ -4,6 +4,23 @@ import {
 } from "./_generated/server";
 import { v } from "convex/values";
 
+// All dates in this module use UTC YYYY-MM-DD format for consistency.
+// Date comparisons across backend/frontend are safe because they all operate
+// in UTC. Client-side rendering converts to user's local timezone for display only.
+
+function getTodayUTC(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getDateUTC(timestamp: number): string {
+  return new Date(timestamp).toISOString().split('T')[0];
+}
+
+function isValidDate(timestamp: number): boolean {
+  const d = new Date(timestamp);
+  return !isNaN(d.getTime());
+}
+
 /**
  * Get the streak data for a user.
  */
@@ -61,7 +78,10 @@ export const updateUserStreak = internalMutation({
       return null;
     }
 
-    // Fetch all current daily scores for the user, ordered by playedAt desc
+    // Fetch all current daily scores for the user.
+    // Note: queries that use the `by_user_current` index are ordered by the index's
+    // natural ordering (system `_creationTime`) and not by `playedAt`. If we need
+    // strict ordering by `playedAt`, collect the rows and sort them in JS below.
     const scores = await ctx.db
       .query("user_scores")
       .withIndex("by_user_current", (q) =>
@@ -70,8 +90,12 @@ export const updateUserStreak = internalMutation({
       .order("desc")
       .collect();
 
+    // Ensure we process scores with the most recent playedAt first.
+    // Some rows may have undefined `playedAt`, so fall back to 0.
+    scores.sort((a, b) => (b.playedAt || 0) - (a.playedAt || 0));
+
     // Get today's date
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayUTC();
 
     // Calculate consecutive streak
     let currentStreak = 0;
@@ -80,7 +104,11 @@ export const updateUserStreak = internalMutation({
     // Collect unique played dates from scores
     for (const score of scores) {
       if (score.playedAt) {
-        const playedDate = new Date(score.playedAt).toISOString().split('T')[0];
+        if (!isValidDate(score.playedAt)) {
+          console.warn("Invalid playedAt timestamp:", score.playedAt);
+          continue;
+        }
+        const playedDate = getDateUTC(score.playedAt);
         playedDates.add(playedDate);
       }
     }
@@ -111,7 +139,7 @@ export const updateUserStreak = internalMutation({
         userId: user._id,
         currentStreak,
         bestStreak,
-        lastPlayedDate: today,
+        lastPlayedDate: getTodayUTC(),
         lastUpdated: Date.now(),
       });
     } else {
@@ -119,7 +147,7 @@ export const updateUserStreak = internalMutation({
         userId: user._id,
         currentStreak,
         bestStreak,
-        lastPlayedDate: today,
+        lastPlayedDate: getTodayUTC(),
         lastUpdated: Date.now(),
       });
     }

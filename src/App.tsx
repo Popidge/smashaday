@@ -11,11 +11,12 @@ import AdminPage from "./components/Admin";
 import Archive from "./components/Archive";
 import Stats from "./components/Stats";
 import StreakStats from "./components/StreakStats";
+import { getTodayUTC } from "./utils/dateUtils";
 
 export default function App() {
   const [showGame, setShowGame] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'admin' | 'archive' | 'stats'>('home');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayUTC();
   const challengeNumber = useQuery(api.queries.getChallengeNumber, { date: today });
   const { isSignedIn, userId: clerkUserId } = useAuth();
   const streakData = useQuery(api.streaks.getUserStreakData, isSignedIn && clerkUserId ? { externalId: clerkUserId } : "skip");
@@ -85,6 +86,7 @@ export default function App() {
   }
 
   const hasPlayedToday = streakData && streakData.lastPlayedDate === today;
+  // Both dates are UTC YYYY-MM-DD strings; direct comparison is safe
 
   return (
     <>

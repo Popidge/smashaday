@@ -76,6 +76,9 @@ export default defineSchema({
     .index("by_user_challenge", ["userId", "challengeId"])
     .index("by_user_current", ["userId","isCurrentDaily"]), //not needed, but useful for future user stats feature
 
+  // All dates in streaks table are UTC YYYY-MM-DD strings for consistency.
+  // Date comparisons across backend/frontend are safe because they all operate
+  // in UTC. Client-side rendering converts to user's local timezone for display only.
   streaks: defineTable({
     userId: v.id("users"),
     currentStreak: v.number(),        // 0 if broken

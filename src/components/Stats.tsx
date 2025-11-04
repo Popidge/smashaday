@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useAuth } from "@clerk/clerk-react";
+import { formatUTCDateForDisplay } from "../utils/dateUtils";
 
 export default function Stats() {
   const { isSignedIn, userId: clerkUserId } = useAuth();
@@ -34,8 +35,9 @@ export default function Stats() {
                   Best: {streakData.bestStreak} days
                 </p>
                 <p className="text-sm text-base-content/70">
-                  Last played: {new Date(streakData.lastPlayedDate).toLocaleDateString()}
+                  Last played: {formatUTCDateForDisplay(streakData.lastPlayedDate)}
                 </p>
+                // lastPlayedDate is UTC YYYY-MM-DD; we parse it as a local date to avoid timezone shifts
               </div>
             ) : (
               <p className="text-base-content/70">No streak data yet</p>

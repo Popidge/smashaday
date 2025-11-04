@@ -2,6 +2,12 @@ import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
+// All dates in this file use UTC YYYY-MM-DD format
+
+function getTodayUTC(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
 export const saveDailyScores = mutation({
   args: {
     externalId: v.string(),
@@ -51,7 +57,7 @@ export const saveDailyScores = mutation({
         };
       }
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayUTC();
       const isCurrentDaily = challenge.date === today;
 
       // Insert new score into user_scores
