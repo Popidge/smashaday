@@ -46,19 +46,23 @@ export default function Stats() {
         </div>
 
         {/* Percentile Ranking */}
-        {statsData && (
-          <div className="card bg-base-100 border border-base-300 shadow-sm">
-            <div className="card-body p-6">
-              <h2 className="card-title text-xl mb-4">📊 Ranking</h2>
-              <p className="text-2xl font-bold text-secondary">
-                Top {101 - statsData.percentile}%
-              </p>
-              <p className="text-sm text-base-content/70">
-                Better than {statsData.percentile - 1}% of players
-              </p>
-            </div>
+        <div className="card bg-base-100 border border-base-300 shadow-sm">
+          <div className="card-body p-6">
+            <h2 className="card-title text-xl mb-4">📊 Ranking</h2>
+            {statsData ? (
+              <>
+                <p className="text-2xl font-bold text-secondary">
+                  Top {101 - statsData.percentile}%
+                </p>
+                <p className="text-sm text-base-content/70">
+                  Better than {statsData.percentile - 1}% of players
+                </p>
+              </>
+            ) : (
+              <p className="text-base-content/70">No ranking data yet</p>
+            )}
           </div>
-        )}
+        </div>
 
         {/* 30-day heatmap placeholder */}
         <div className="card bg-base-100 border border-base-300 shadow-sm">
