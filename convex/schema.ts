@@ -65,12 +65,26 @@ export default defineSchema({
   }).index("by_status", ["status"]),
 
   user_scores: defineTable({
-  userId: v.id("users"),
-  challengeId: v.id("daily_challenges"),
-  score: v.number(),
-  })
+    userId: v.id("users"),
+    challengeId: v.id("daily_challenges"),
+    score: v.number(),
+    isCurrentDaily: v.optional(v.boolean()),
+    playedAt: v.optional(v.number()) //timestamp for timeline stuff later
+    })
     .index("by_user", ["userId"])
     .index("by_challenge", ["challengeId"])
     .index("by_user_challenge", ["userId", "challengeId"])
+    .index("by_user_current", ["userId","isCurrentDaily"]), //not needed, but useful for future user stats feature
 
+  // All dates in streaks table are UTC YYYY-MM-DD strings for consistency.
+  // Date comparisons across backend/frontend are safe because they all operate
+  // in UTC. Client-side rendering converts to user's local timezone for display only.
+  streaks: defineTable({
+    userId: v.id("users"),
+    currentStreak: v.number(),        // 0 if broken
+    bestStreak: v.number(),
+    lastPlayedDate: v.string(),       // YYYY-MM-DD
+    lastUpdated: v.number(),          // timestamp for cache busting
+    }).index("by_user", ["userId"])
+    .index("by_current_streak", ["currentStreak"])
 })

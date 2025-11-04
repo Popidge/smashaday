@@ -22,6 +22,7 @@ import type * as saveDailyScores from "../saveDailyScores.js";
 import type * as smashCompiler from "../smashCompiler.js";
 import type * as smashDbOps from "../smashDbOps.js";
 import type * as smashGen from "../smashGen.js";
+import type * as streaks from "../streaks.js";
 import type * as users from "../users.js";
 
 import type {
@@ -53,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   smashCompiler: typeof smashCompiler;
   smashDbOps: typeof smashDbOps;
   smashGen: typeof smashGen;
+  streaks: typeof streaks;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

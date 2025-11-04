@@ -36,6 +36,7 @@ Features
 - Clerk for authentication (optional for local dev but required to save scores / use archive).
 - LLM-based word/clue generation (configurable via Convex environment).
 - Admin and archive routes (client-side hash routing).
+- Daily challenge streaks: Track consecutive days of playing the current daily challenge (archive replays don't count).
 
 Requirements
 - Node.js v18+
@@ -94,13 +95,23 @@ See [`convex/schema.ts`](convex/schema.ts:1) for full definitions. Key tables:
 - `daily_challenges` — `date` (YYYY-MM-DD) and `dailySmashes` (array of smash ids)
 - `users` — name and `externalId` (Clerk ID)
 - `wordsDb` — candidate words/phrases, clue text and enrichment status
-- `user_scores` — per-user per-challenge scores (indexed by user & challenge)
+- `user_scores` — per-user per-challenge scores (indexed by user & challenge); includes `isCurrentDaily` and `playedAt` for streak tracking
+- `streaks` — per-user streak data: current streak, best streak, last played date (+ indexes)
 
 Archive behavior (summary)
 - Route: `#/archive` (client-side hash routing configured in [`src/App.tsx`](src/App.tsx:1)).
 - Archive lists past daily challenges with cursor-based pagination (Convex `.paginate()`).
 - Clicking an item opens the Game UI and loads the challenge by its canonical date (YYYY-MM-DD).
 - Playing/saving archived challenge scores requires signin; the frontend avoids duplicate saves if a score already exists.
+
+Streak behavior (summary)
+- Route: `#/stats` (client-side hash routing).
+- Tracks consecutive calendar days of completing the current daily challenge.
+- **Archive replays do NOT count toward streaks** — only games where `isCurrentDaily = true` (i.e., played on the challenge's publication date).
+- Streak resets to 0 if a day is missed; strict calendar-day enforcement.
+- **Timing edge case**: If you start before midnight and finish after, the streak may break (acceptable for strictness).
+- Shows current streak, best streak, and percentile ranking compared to all users.
+- Streak data updates automatically after saving a daily challenge score.
 
 Backend: word generation & Convex notes
 - Word/clue generation is handled by Convex actions that call an LLM and write results to `wordsDb` and related tables.
@@ -128,7 +139,10 @@ References (quick)
 - [`src/App.tsx`](src/App.tsx:1)
 - [`src/components/Game.tsx`](src/components/Game.tsx:1)
 - [`src/components/Archive.tsx`](src/components/Archive.tsx:1)
+- [`src/components/StreakStats.tsx`](src/components/StreakStats.tsx:1)
+- [`src/components/Stats.tsx`](src/components/Stats.tsx:1)
 - [`convex/generateWords.ts`](convex/generateWords.ts:1)
 - [`convex/queries.ts`](convex/queries.ts:1)
 - [`convex/saveDailyScores.ts`](convex/saveDailyScores.ts:1)
+- [`convex/streaks.ts`](convex/streaks.ts:1)
 - [`convex/users.ts`](convex/users.ts:1)

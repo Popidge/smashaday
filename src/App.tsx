@@ -2,18 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "convex/react";
+import { useAuth } from "@clerk/clerk-react";
 import { api } from "../convex/_generated/api";
 import Header from "./components/Header";
 import Game from "./components/Game";
 import Footer from "./components/Footer";
 import AdminPage from "./components/Admin";
 import Archive from "./components/Archive";
+import Stats from "./components/Stats";
+import StreakStats from "./components/StreakStats";
+import { getTodayUTC } from "./utils/dateUtils";
 
 export default function App() {
   const [showGame, setShowGame] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'home' | 'admin' | 'archive'>('home');
-  const today = new Date().toISOString().split('T')[0];
+  const [currentPage, setCurrentPage] = useState<'home' | 'admin' | 'archive' | 'stats'>('home');
+  const today = getTodayUTC();
   const challengeNumber = useQuery(api.queries.getChallengeNumber, { date: today });
+  const { isSignedIn, userId: clerkUserId } = useAuth();
+  const streakData = useQuery(api.streaks.getUserStreakData, isSignedIn && clerkUserId ? { externalId: clerkUserId } : "skip");
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -22,6 +28,8 @@ export default function App() {
         setCurrentPage('admin');
       } else if (hash === 'archive') {
         setCurrentPage('archive');
+      } else if (hash === 'stats') {
+        setCurrentPage('stats');
       } else {
         setCurrentPage('home');
       }
@@ -57,6 +65,16 @@ export default function App() {
     );
   }
 
+  if (currentPage === 'stats') {
+    return (
+      <>
+        <Header />
+        <Stats />
+        <Footer />
+      </>
+    );
+  }
+
   if (showGame) {
     return (
       <>
@@ -67,12 +85,27 @@ export default function App() {
     );
   }
 
+  const hasPlayedToday = streakData && streakData.lastPlayedDate === today;
+  // Both dates are UTC YYYY-MM-DD strings; direct comparison is safe
+
   return (
     <>
       <Header />
       <main className="flex flex-col items-center justify-start min-h-screen p-4 sm:pt-12 md:pt-16">
         <h1 className="text-4xl font-bold mb-4">{challengeNumber ? `SmashADay #${challengeNumber}` : "SmashADay"}</h1>
         <p className="text-lg mb-8">{new Date().toLocaleDateString('en-GB')}</p>
+
+        {isSignedIn && streakData && (
+          <div className="mb-6">
+            <StreakStats compact showPersonalBest />
+            {streakData.currentStreak > 0 && (
+              <p className="text-sm text-base-content/70 mt-2 text-center">
+                {hasPlayedToday ? "✓ Played today!" : "Play today to keep your streak alive!"}
+              </p>
+            )}
+          </div>
+        )}
+
         <button onClick={() => setShowGame(true)} className="btn btn-primary btn-lg">
           Smash it up!
         </button>
