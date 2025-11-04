@@ -35,7 +35,7 @@ export default function StreakStats({
         <span className="font-semibold">{currentStreak} days</span>
         {showPercentile && (
           <span className="text-base-content/70">
-            Better than {percentile}% of players
+            Better than {percentile - 1}% of players
           </span>
         )}
         {isPersonalBest && (
@@ -55,7 +55,7 @@ export default function StreakStats({
               <h3 className="font-semibold text-lg">{currentStreak} day streak</h3>
               {showPercentile && (
                 <p className="text-sm text-base-content/70">
-                  Better than {percentile}% of players
+                  Better than {percentile - 1}% of players
                 </p>
               )}
             </div>

@@ -37,7 +37,7 @@ export default function Stats() {
                 <p className="text-sm text-base-content/70">
                   Last played: {formatUTCDateForDisplay(streakData.lastPlayedDate)}
                 </p>
-                // lastPlayedDate is UTC YYYY-MM-DD; we parse it as a local date to avoid timezone shifts
+                {/*lastPlayedDate is UTC YYYY-MM-DD; we parse it as a local date to avoid timezone shifts */}
               </div>
             ) : (
               <p className="text-base-content/70">No streak data yet</p>
