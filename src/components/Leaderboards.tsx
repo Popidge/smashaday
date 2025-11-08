@@ -51,38 +51,20 @@ export default function Leaderboards() {
 
   // Update pages when new data arrives
   useEffect(() => {
-    if (!dailyLeaderboard || activeTab !== "daily") {
-      return;
+    if (dailyLeaderboard && activeTab === "daily") {
+      setDailyPages((prev) =>
+        prev.length === 0 ? [dailyLeaderboard] : [...prev, dailyLeaderboard]
+      );
     }
-
-    setDailyPages((prev) => {
-      const nextEntry = { cursor: dailyCursor, data: dailyLeaderboard };
-      const existingIndex = prev.findIndex((page) => page.cursor === dailyCursor);
-      if (existingIndex >= 0) {
-        const next = [...prev];
-        next[existingIndex] = nextEntry;
-        return next;
-      }
-      return [...prev, nextEntry];
-    });
-  }, [dailyLeaderboard, dailyCursor, activeTab]);
+  }, [dailyLeaderboard, activeTab]);
 
   useEffect(() => {
-    if (!streakLeaderboard || activeTab !== "streak") {
-      return;
+    if (streakLeaderboard && activeTab === "streak") {
+      setStreakPages((prev) =>
+        prev.length === 0 ? [streakLeaderboard] : [...prev, streakLeaderboard]
+      );
     }
-
-    setStreakPages((prev) => {
-      const nextEntry = { cursor: streakCursor, data: streakLeaderboard };
-      const existingIndex = prev.findIndex((page) => page.cursor === streakCursor);
-      if (existingIndex >= 0) {
-        const next = [...prev];
-        next[existingIndex] = nextEntry;
-        return next;
-      }
-      return [...prev, nextEntry];
-    });
-  }, [streakLeaderboard, streakCursor, activeTab]);
+  }, [streakLeaderboard, activeTab]);
 
   // Reset when switching tabs
   useEffect(() => {
