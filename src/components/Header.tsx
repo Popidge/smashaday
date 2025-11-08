@@ -138,6 +138,11 @@ export default function Header() {
             Stats
           </a>
 
+          {/* Leaderboards link */}
+          <a href="#leaderboards" className="btn btn-ghost btn-sm" aria-label="Go to Leaderboards">
+            Leaderboards
+          </a>
+
           {/* Admin button only shown in header on md+ (mobile gets it in the menu) */}
           <div className="hidden md:block">
             <AdminButton className="btn-sm" />
@@ -209,6 +214,14 @@ export default function Header() {
                     aria-label="Stats"
                   >
                     Stats
+                  </a>
+                  <a
+                    href="#leaderboards"
+                    className="btn btn-ghost justify-start w-full text-left"
+                    onClick={() => setMenuOpen(false)}
+                    aria-label="Leaderboards"
+                  >
+                    Leaderboards
                   </a>
                   <AdminButton
                     className="btn-ghost justify-start w-full text-left"

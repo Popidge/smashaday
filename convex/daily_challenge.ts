@@ -264,6 +264,15 @@ export const generateDailyChallenge = internalMutation({
       dailySmashes,
     });
 
+    // Step 6: Clear yesterday's leaderboard
+    const oldLeaderboard = await ctx.db
+      .query("dailyChallengeLeaderboard")
+      .collect();
+    for (const entry of oldLeaderboard) {
+      await ctx.db.delete(entry._id);
+    }
+    devLog(`Cleared ${oldLeaderboard.length} entries from dailyChallengeLeaderboard`);    
+
     return challengeId;
   },
 });

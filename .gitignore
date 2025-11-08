@@ -27,3 +27,4 @@ dist-ssr
 .cursor/*
 
 /convex_dev_export/*
+/convex/generateTestData.ts

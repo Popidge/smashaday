@@ -11,11 +11,12 @@ import AdminPage from "./components/Admin";
 import Archive from "./components/Archive";
 import Stats from "./components/Stats";
 import StreakStats from "./components/StreakStats";
+import Leaderboards from "./components/Leaderboards";
 import { getTodayUTC } from "./utils/dateUtils";
 
 export default function App() {
   const [showGame, setShowGame] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'home' | 'admin' | 'archive' | 'stats'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'admin' | 'archive' | 'stats' | 'leaderboards'>('home');
   const today = getTodayUTC();
   const challengeNumber = useQuery(api.queries.getChallengeNumber, { date: today });
   const { isSignedIn, userId: clerkUserId } = useAuth();
@@ -30,6 +31,8 @@ export default function App() {
         setCurrentPage('archive');
       } else if (hash === 'stats') {
         setCurrentPage('stats');
+      } else if (hash === 'leaderboards') {
+        setCurrentPage('leaderboards');
       } else {
         setCurrentPage('home');
       }
@@ -73,6 +76,10 @@ export default function App() {
         <Footer />
       </>
     );
+  }
+
+  if (currentPage === 'leaderboards') {
+    return <Leaderboards />;
   }
 
   if (showGame) {
