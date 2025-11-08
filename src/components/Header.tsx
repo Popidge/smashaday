@@ -119,61 +119,83 @@ export default function Header() {
   return (
     <header>
       <div className="navbar sticky top-0 z-50 border-b border-base-300 bg-base-100/80 backdrop-blur supports-backdrop-blur:backdrop-blur px-3">
-        {/* Left: Home (compact on md+, full label on small) */}
-        <div className="navbar-start gap-2">
-          {/* compact home for md+ (hidden on small) */}
-          <a href="#" className="btn btn-ghost btn-sm hidden md:inline-flex" aria-label="Go to home">
+        {/* Mobile layout: logo left, title center, hamburger right */}
+        <div className="flex md:hidden items-center justify-between w-full">
+          {/* Mobile left: logo */}
+          <a href="#" className="btn btn-ghost btn-sm flex-shrink-0" aria-label="Go to home">
             <img src="/smashaday_logo.svg" alt="SmashADay logo" className="w-6 h-6" />
           </a>
-          {/* full label for small screens (hidden on md+) */}
-          <a href="#" className="btn btn-ghost btn-sm md:hidden" aria-label="Go to home">SmashADay</a>
 
-          {/* Archive link */}
-          <a href="#archive" className="btn btn-ghost btn-sm" aria-label="Go to Archive">
-            Archive
-          </a>
+          {/* Mobile center: title with responsive font */}
+          <div className="flex-1 text-center px-2">
+            <a href="#" className="font-bold tracking-widest text-base-content/80 select-none text-sm sm:text-base md:text-lg truncate block" aria-label="Homepage">
+              SMASH A DAY
+            </a>
+          </div>
 
-          {/* Stats link */}
-          <a href="#stats" className="btn btn-ghost btn-sm" aria-label="Go to Stats">
-            Stats
-          </a>
+          {/* Mobile right: show hamburger when closed, show a close control in the title bar when open */}
+          {!menuOpen ? (
+            <button
+              onClick={() => setMenuOpen(true)}
+              aria-expanded={menuOpen}
+              aria-label="Open menu"
+              className="btn btn-ghost btn-circle flex-shrink-0"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={() => setMenuOpen(false)}
+              aria-expanded={menuOpen}
+              aria-label="Close menu"
+              className="btn btn-ghost btn-circle flex-shrink-0"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          )}
+        </div>
 
-          {/* Leaderboards link */}
-          <a href="#leaderboards" className="btn btn-ghost btn-sm" aria-label="Go to Leaderboards">
-            Leaderboards
-          </a>
+        {/* Desktop layout: standard navbar */}
+        <div className="hidden md:flex w-full">
+          {/* Left: Home (compact) */}
+          <div className="navbar-start gap-2">
+            <a href="#" className="btn btn-ghost btn-sm" aria-label="Go to home">
+              <img src="/smashaday_logo.svg" alt="SmashADay logo" className="w-6 h-6" />
+            </a>
 
-          {/* Admin button only shown in header on md+ (mobile gets it in the menu) */}
-          <div className="hidden md:block">
+            {/* Archive link */}
+            <a href="#archive" className="btn btn-ghost btn-sm" aria-label="Go to Archive">
+              Archive
+            </a>
+
+            {/* Stats link */}
+            <a href="#stats" className="btn btn-ghost btn-sm" aria-label="Go to Stats">
+              Stats
+            </a>
+
+            {/* Leaderboards link */}
+            <a href="#leaderboards" className="btn btn-ghost btn-sm" aria-label="Go to Leaderboards">
+              Leaderboards
+            </a>
+
+            {/* Admin button */}
             <AdminButton className="btn-sm" />
           </div>
-        </div>
 
-        {/* Center: Title (visible on md+, clickable home) */}
-        <div className="navbar-center hidden md:flex">
-          <a href="#" className="font-bold tracking-widest text-base-content/80 select-none" aria-label="Homepage">SMASH A DAY</a>
-        </div>
-
-        {/* Right: Theme + Auth (keep small, visible on md+) */}
-        <div className="navbar-end gap-2 hidden md:flex">
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <SignInUpButton />
+          {/* Center: Title */}
+          <div className="navbar-center">
+            <a href="#" className="font-bold tracking-widest text-base-content/80 select-none" aria-label="Homepage">SMASH A DAY</a>
           </div>
-        </div>
 
-        {/* Mobile: hamburger */}
-        <div className="ml-2 md:hidden">
-          <button
-            onClick={() => setMenuOpen((s) => !s)}
-            aria-expanded={menuOpen}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            className="btn btn-ghost btn-circle"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d={menuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          {/* Right: Theme + Auth */}
+          <div className="navbar-end gap-2">
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <SignInUpButton />
+            </div>
+          </div>
         </div>
 
         {/* Mobile menu panel - centered and polished (refined spacing & alignment) */}
@@ -183,16 +205,7 @@ export default function Header() {
             aria-label="Mobile menu"
             className="absolute left-1/2 top-16 w-[92%] max-w-xs -translate-x-1/2 bg-base-100 border border-base-300 rounded-xl shadow-lg p-0 z-50 md:hidden menu-panel menu-open"
           >
-            {/* Close button – floating circle overlapping the panel for a polished look */}
             <div className="relative">
-              <button
-                onClick={() => setMenuOpen(false)}
-                aria-label="Close menu"
-                className="menu-close-btn absolute -top-5 right-4 md:right-6 btn btn-ghost btn-sm rounded-full"
-              >
-                <span aria-hidden="true">✕</span>
-              </button>
-
               <div className="pt-6 px-4 pb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-lg">Menu</span>
