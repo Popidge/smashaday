@@ -52,23 +52,19 @@ export default function Leaderboards() {
   // Update pages when new data arrives
   useEffect(() => {
     if (dailyLeaderboard && activeTab === "daily") {
-      if (dailyCursor === null) {
-        setDailyPages([dailyLeaderboard]);
-      } else {
-        setDailyPages(prev => [...prev, dailyLeaderboard]);
-      }
+      setDailyPages((prev) =>
+        prev.length === 0 ? [dailyLeaderboard] : [...prev, dailyLeaderboard]
+      );
     }
-  }, [dailyLeaderboard, dailyCursor, activeTab]);
+  }, [dailyLeaderboard, activeTab]);
 
   useEffect(() => {
     if (streakLeaderboard && activeTab === "streak") {
-      if (streakCursor === null) {
-        setStreakPages([streakLeaderboard]);
-      } else {
-        setStreakPages(prev => [...prev, streakLeaderboard]);
-      }
+      setStreakPages((prev) =>
+        prev.length === 0 ? [streakLeaderboard] : [...prev, streakLeaderboard]
+      );
     }
-  }, [streakLeaderboard, streakCursor, activeTab]);
+  }, [streakLeaderboard, activeTab]);
 
   // Reset when switching tabs
   useEffect(() => {
