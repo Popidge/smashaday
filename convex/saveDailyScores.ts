@@ -59,6 +59,7 @@ export const saveDailyScores = mutation({
 
       const today = getTodayUTC();
       const isCurrentDaily = challenge.date === today;
+      const playedAt = Date.now();
 
       // Insert new score into user_scores
       await ctx.db.insert("user_scores", {
@@ -66,7 +67,7 @@ export const saveDailyScores = mutation({
         challengeId: args.challengeId,
         score: args.score,
         isCurrentDaily,
-        playedAt: Date.now(),
+        playedAt,
       });
 
       // Update streak if this is a current daily challenge
@@ -88,7 +89,7 @@ export const saveDailyScores = mutation({
         await ctx.runMutation(internal.leaderboards.updateLeaderboards, {
           userId: user._id,
           score: args.score,
-          playedAt: Date.now(),
+          playedAt,
           currentStreak,
           name: user.name,
         });
