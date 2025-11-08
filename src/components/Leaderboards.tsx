@@ -52,17 +52,42 @@ export default function Leaderboards() {
   // Update pages when new data arrives
   useEffect(() => {
     if (dailyLeaderboard && activeTab === "daily") {
-      setDailyPages((prev) =>
-        prev.length === 0 ? [dailyLeaderboard] : [...prev, dailyLeaderboard]
-      );
+      setDailyPages((prev) => {
+        // If no pages yet, initialize with the new page
+        if (prev.length === 0) return [dailyLeaderboard];
+
+        // Try to find an existing page with the same cursor and replace it
+        const matchIndex = prev.findIndex(
+          (p) => p.continueCursor === (dailyLeaderboard as any).continueCursor
+        );
+        if (matchIndex !== -1) {
+          const copy = prev.slice();
+          copy[matchIndex] = dailyLeaderboard;
+          return copy;
+        }
+
+        // Otherwise append as a new page
+        return [...prev, dailyLeaderboard];
+      });
     }
   }, [dailyLeaderboard, activeTab]);
 
   useEffect(() => {
     if (streakLeaderboard && activeTab === "streak") {
-      setStreakPages((prev) =>
-        prev.length === 0 ? [streakLeaderboard] : [...prev, streakLeaderboard]
-      );
+      setStreakPages((prev) => {
+        if (prev.length === 0) return [streakLeaderboard];
+
+        const matchIndex = prev.findIndex(
+          (p) => p.continueCursor === (streakLeaderboard as any).continueCursor
+        );
+        if (matchIndex !== -1) {
+          const copy = prev.slice();
+          copy[matchIndex] = streakLeaderboard;
+          return copy;
+        }
+
+        return [...prev, streakLeaderboard];
+      });
     }
   }, [streakLeaderboard, activeTab]);
 
