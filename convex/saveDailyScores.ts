@@ -75,6 +75,23 @@ export const saveDailyScores = mutation({
           externalId: args.externalId,
           challengeId: args.challengeId,
         });
+
+        // Fetch updated streak data to get currentStreak
+        const streakData = await ctx.db
+          .query("streaks")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .unique();
+
+        const currentStreak = streakData?.currentStreak || 0;
+
+        // Update leaderboards
+        await ctx.runMutation(internal.leaderboards.updateLeaderboards, {
+          userId: user._id,
+          score: args.score,
+          playedAt: Date.now(),
+          currentStreak,
+          name: user.name,
+        });
       }
 
       return {

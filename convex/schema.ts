@@ -85,6 +85,24 @@ export default defineSchema({
     bestStreak: v.number(),
     lastPlayedDate: v.string(),       // YYYY-MM-DD
     lastUpdated: v.number(),          // timestamp for cache busting
-    }).index("by_user", ["userId"])
-    .index("by_current_streak", ["currentStreak"])
+    })
+    .index("by_user", ["userId"])
+    .index("by_current_streak", ["currentStreak"]),
+
+  dailyChallengeLeaderboard: defineTable({
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    score: v.number(),
+    playedAt: v.number()
+  })
+    .index("by_user", ["userId"])
+    .index("by_score_playedAt", ["score", "playedAt"]),
+
+  currentStreakLeaderboard: defineTable({
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    currentStreak: v.number()
+  })
+  .index("by_user", ["userId"])
+  .index("by_currentStreak", ["currentStreak"]),
 })
