@@ -54,7 +54,11 @@ export default function Leaderboards() {
     if (dailyLeaderboard && activeTab === "daily") {
       setDailyPages((prev) => {
         // If no pages yet, initialize with the new page
-        if (prev.length === 0) return [dailyLeaderboard];
+        if (prev.length === 0) {
+          // clear loading flag because we just received a page
+          setLoadingMore(false);
+          return [dailyLeaderboard];
+        }
 
         // Try to find an existing page with the same cursor and replace it
         const matchIndex = prev.findIndex(
@@ -63,10 +67,13 @@ export default function Leaderboards() {
         if (matchIndex !== -1) {
           const copy = prev.slice();
           copy[matchIndex] = dailyLeaderboard;
+          // clear loading flag because we updated an existing page
+          setLoadingMore(false);
           return copy;
         }
 
         // Otherwise append as a new page
+        setLoadingMore(false); // new page arrived, clear loading flag
         return [...prev, dailyLeaderboard];
       });
     }
@@ -75,7 +82,10 @@ export default function Leaderboards() {
   useEffect(() => {
     if (streakLeaderboard && activeTab === "streak") {
       setStreakPages((prev) => {
-        if (prev.length === 0) return [streakLeaderboard];
+        if (prev.length === 0) {
+          setLoadingMore(false);
+          return [streakLeaderboard];
+        }
 
         const matchIndex = prev.findIndex(
           (p) => p.continueCursor === (streakLeaderboard as any).continueCursor
@@ -83,9 +93,11 @@ export default function Leaderboards() {
         if (matchIndex !== -1) {
           const copy = prev.slice();
           copy[matchIndex] = streakLeaderboard;
+          setLoadingMore(false);
           return copy;
         }
 
+        setLoadingMore(false);
         return [...prev, streakLeaderboard];
       });
     }
@@ -100,22 +112,22 @@ export default function Leaderboards() {
   }, [activeTab]);
 
   const loadMore = () => {
+    // Prevent duplicate in-flight requests
     if (loadingMore) return;
-    setLoadingMore(true);
 
     if (activeTab === "daily") {
       const lastPage = dailyPages[dailyPages.length - 1];
       if (lastPage && !lastPage.isDone) {
+        setLoadingMore(true);
         setDailyCursor(lastPage.continueCursor);
       }
     } else {
       const lastPage = streakPages[streakPages.length - 1];
       if (lastPage && !lastPage.isDone) {
+        setLoadingMore(true);
         setStreakCursor(lastPage.continueCursor);
       }
     }
-
-    setLoadingMore(false);
   };
 
   const currentPages = activeTab === "daily" ? dailyPages : streakPages;
